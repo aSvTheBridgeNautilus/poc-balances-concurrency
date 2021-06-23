@@ -30,15 +30,10 @@ public class BalanceResponse {
 
 	private Double amount = 0d;
 
-	private String currency;
-
 	@JsonProperty("timestamp_utc")
 	private Instant timestamp;
 
 	@JsonProperty("account_id")
 	private Long accountId;
-
-	@JsonProperty("user_id")
-	private String userId;
 
 }

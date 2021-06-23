@@ -1,8 +1,8 @@
 package team.nautilus.poc.concurrency.application.controller;
 
-import java.security.InvalidParameterException;
 import java.util.List;
 
+import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -47,7 +47,7 @@ public class BalanceGlobalController {
 				PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "timestamp")));
 
 		if (balances.isEmpty()) {
-			throw new InvalidParameterException("No movements found for account " + accountId);
+			throw new EntityNotFoundException("No movements found for account " + accountId);
 		}
 
 		return ResponseEntity.ok(BalanceBuilder.toCurrentBalanceResponse(balances.get(0)));

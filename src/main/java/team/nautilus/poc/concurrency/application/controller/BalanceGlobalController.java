@@ -50,7 +50,7 @@ public class BalanceGlobalController {
 			throw new InvalidParameterException("No movements found for account " + accountId);
 		}
 
-		return ResponseEntity.ok(BalanceBuilder.toResponse(balances.get(0)));
+		return ResponseEntity.ok(BalanceBuilder.toCurrentBalanceResponse(balances.get(0)));
 	}
 
 }

@@ -17,4 +17,14 @@ public class BalanceBuilder {
 				.build();
 	}
 
+	public static BalanceResponse toCurrentBalanceResponse(Balance balance) {
+		return BalanceResponse
+				.builder()
+				.id(balance.getId())
+				.accountId(balance.getAccountId())
+				.amount(balance.getBalance())
+				.timestamp(balance.getTimestamp())
+				.build();
+	}
+
 }

@@ -16,15 +16,16 @@ import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditReques
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.service.AccountJournal;
+import team.nautilus.poc.concurrency.service.AccountJournalOptimistic;
 
 @Slf4j
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/poc/concurrency")
-public class BalanceController {
+@RequestMapping("/poc/concurrency/optimistic")
+public class BalanceOptimisticController {
 	
-	private final AccountJournal accountJournal;
+	private final AccountJournalOptimistic journal;
 	
 	@SneakyThrows
 	@PostMapping("/balance_debit")
@@ -32,7 +33,7 @@ public class BalanceController {
 			@Valid @RequestBody BalanceDebitRequest debitRequest) {
 		log.debug("[BalanceController:balanceDebit] started...");
 
-		return ResponseEntity.ok(accountJournal.takeFundsFromAccount(debitRequest));
+		return ResponseEntity.ok(journal.takeFundsFromAccount(debitRequest));
 	}
 	
 	@PostMapping("/balance_credit")
@@ -40,7 +41,7 @@ public class BalanceController {
 			@Valid  @RequestBody BalanceCreditRequest creditRequest) {
 		log.debug("[BalanceController:balanceCredit] started...");
 		
-		return ResponseEntity.ok(accountJournal.addFundsToAccount(creditRequest));
+		return ResponseEntity.ok(journal.addFundsToAccount(creditRequest));
 	}	
 
 }

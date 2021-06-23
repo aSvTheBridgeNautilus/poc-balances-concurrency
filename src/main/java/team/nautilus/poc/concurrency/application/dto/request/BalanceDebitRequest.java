@@ -32,17 +32,6 @@ public class BalanceDebitRequest implements Serializable {
 	private Long accountId;
 
 	@Valid
-	@NotNull(message = "user_id is required")
-	@NotBlank(message = "user_id cannot be empty")
-	@JsonProperty("user_id")
-	private String userId;
-
-	@Valid
-	@NotNull(message = "currency is required")
-	@NotBlank(message = "currency cannot be empty")
-	private String currency;
-
-	@Valid
 	@NotNull(message = "amount is required")
 	private Double amount;
 

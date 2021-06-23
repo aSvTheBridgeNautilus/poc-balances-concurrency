@@ -1,0 +1,163 @@
+{
+	"info": {
+		"_postman_id": "bc6cd220-9688-4912-8440-78c4d79996b2",
+		"name": "nautilus-balances-concurrency-poc",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "pessimistic",
+			"item": [
+				{
+					"name": "/pessimistic/balance_debit",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"account_id\": 111,\n  \"amount\": 30.00,\n  \"comments\": \"top debit from user 111\",\n  \"transfer_reference_id\": 11100001,\n  \"bank_reference_id\": \"NCB\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core-balances-ms-url}}/poc/concurrency/pessimistic/balance_debit",
+							"host": [
+								"{{core-balances-ms-url}}"
+							],
+							"path": [
+								"poc",
+								"concurrency",
+								"pessimistic",
+								"balance_debit"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/pessimistic/balance_credit",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"account_id\": 111,\n  \"amount\": 50.00,\n  \"comments\": \"top transfer from NCB to user 111\",\n  \"transfer_reference_id\": 11100001,\n  \"bank_reference_id\": \"NCB\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core-balances-ms-url}}//poc/concurrency/pessimistic/balance_credit",
+							"host": [
+								"{{core-balances-ms-url}}"
+							],
+							"path": [
+								"",
+								"poc",
+								"concurrency",
+								"pessimistic",
+								"balance_credit"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "optimistic",
+			"item": [
+				{
+					"name": "/optimistic/balance_debit",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"account_id\": 111,\n  \"amount\": 30.00,\n  \"comments\": \"top debit from user 111\",\n  \"transfer_reference_id\": 11100001,\n  \"bank_reference_id\": \"NCB\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core-balances-ms-url}}/poc/concurrency/optimistic/balance_debit",
+							"host": [
+								"{{core-balances-ms-url}}"
+							],
+							"path": [
+								"poc",
+								"concurrency",
+								"optimistic",
+								"balance_debit"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/optimistic/balance_credit",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"account_id\": 111,\n  \"amount\": 50.00,\n  \"comments\": \"top transfer from NCB to user 111\",\n  \"transfer_reference_id\": 11100001,\n  \"bank_reference_id\": \"NCB\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{core-balances-ms-url}}//poc/concurrency/optimistic/balance_credit",
+							"host": [
+								"{{core-balances-ms-url}}"
+							],
+							"path": [
+								"",
+								"poc",
+								"concurrency",
+								"optimistic",
+								"balance_credit"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "core-balances-ms-url",
+			"value": "http://localhost:8080"
+		}
+	]
+}

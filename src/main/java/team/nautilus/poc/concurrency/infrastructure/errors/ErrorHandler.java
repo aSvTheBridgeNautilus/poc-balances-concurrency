@@ -39,14 +39,6 @@ public class ErrorHandler {
 		ErrorResponse errorResponse = new ErrorResponse(Instant.now(), ex.getMessage(), request.getDescription(false));
 		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
 	}
-
-	
-	@ExceptionHandler(OperationNotSupportedException.class)
-	@ResponseStatus(HttpStatus.BAD_REQUEST)
-	protected ResponseEntity<Object> handleOperationNotSupportedException(Exception ex, WebRequest request) {
-		ErrorResponse errorResponse = new ErrorResponse(Instant.now(), ex.getMessage(), request.getDescription(false));
-		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-	}
 	
 	/*
 	 * Handler for annotation @Valid in

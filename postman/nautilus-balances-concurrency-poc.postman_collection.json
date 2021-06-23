@@ -52,12 +52,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{core-balances-ms-url}}//poc/concurrency/pessimistic/balance_credit",
+							"raw": "{{core-balances-ms-url}}/poc/concurrency/pessimistic/balance_credit",
 							"host": [
 								"{{core-balances-ms-url}}"
 							],
 							"path": [
-								"",
 								"poc",
 								"concurrency",
 								"pessimistic",
@@ -132,6 +131,31 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "/balances",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{core-balances-ms-url}}/poc/concurrency/balances?account_id=111",
+					"host": [
+						"{{core-balances-ms-url}}"
+					],
+					"path": [
+						"poc",
+						"concurrency",
+						"balances"
+					],
+					"query": [
+						{
+							"key": "account_id",
+							"value": "111"
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [

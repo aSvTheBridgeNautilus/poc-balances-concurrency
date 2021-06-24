@@ -27,4 +27,14 @@ public class BalanceBuilder {
 				.build();
 	}
 
+	public static BalanceResponse toLastcycleBalanceResponse(Balance balance, Double lastCycleBalance) {
+		return BalanceResponse
+				.builder()
+				.id(balance.getId())
+				.accountId(balance.getAccountId())
+				.amount(lastCycleBalance)
+				.timestamp(balance.getTimestamp())
+				.build();
+	}
+
 }

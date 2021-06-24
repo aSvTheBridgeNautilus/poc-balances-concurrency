@@ -30,6 +30,23 @@ public abstract class AccountJournal {
 	public abstract BalanceResponse addFundsToAccount(BalanceCreditRequest request);
 	
 	@SneakyThrows
+	public Double getLastCycleBalanceByAccountId(Long id) {
+		return repository.getLastCycleBalanceByAccountId(id);
+	}
+	
+	@SneakyThrows
+	public Balance getBalanceFromAccount(Long id) {
+		List<Balance> lastMovements = getLastMovementsFromAccount(id, 0, 1);
+		
+		if (lastMovements == null || lastMovements.isEmpty() || lastMovements.get(0) == null) {
+			throw new EntityNotFoundException("No movements found for account " + id);
+		}
+		
+		log.info("[AccountJournal: getLastMovementFromAccount]: {}", lastMovements.get(0).toString());
+		return lastMovements.get(0);
+	}
+	
+	@SneakyThrows
 	public Balance getLastMovementFromAccount(Long id) {
 		List<Balance> lastMovements = getLastMovementsFromAccount(id, 0, 1);
 

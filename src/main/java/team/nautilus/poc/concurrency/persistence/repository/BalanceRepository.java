@@ -15,6 +15,13 @@ import team.nautilus.poc.concurrency.persistence.model.Balance;
 public interface BalanceRepository extends JpaRepository<Balance, Long> {
 
 	
+	@Query(value = "select sum(b.amount) "
+			+ "from "
+			+ "Balance b "
+			+ "where "
+			+ "b.accountId = :accountId ")
+	Double getLastCycleBalanceByAccountId(@Param("accountId") Long accountId);
+
 	@Query(value = "select b "
 			+ "from "
 			+ "Balance b "

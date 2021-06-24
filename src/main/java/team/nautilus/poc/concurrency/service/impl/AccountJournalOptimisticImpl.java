@@ -65,7 +65,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 				counter++;
 				
 				/*
-				 * if we reach 3 dirty reading, rollback transaction
+				 * if we reach 3 dirty reading, rollback transaction v   b            
 				 */
 				if(counter > 3) {
 					throw new ConcurrentModificationException("Dirty reading reach max limit: 3. Transaction will be rejected");

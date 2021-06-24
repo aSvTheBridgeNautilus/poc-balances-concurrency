@@ -40,6 +40,26 @@ public class BalanceGlobalController {
 			@NotNull(message = "account_id cannot be empty") 
 			@RequestParam(value = "account_id", required = false) 
 			Long accountId) {
+		
+		log.debug("[BalanceController:getBalance] started");
+		
+		List<Balance> balances = repository.findAllByAccountId(accountId,
+				PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "timestamp")));
+		
+		if (balances.isEmpty()) {
+			throw new EntityNotFoundException("No movements found for account " + accountId);
+		}
+		
+		return ResponseEntity.ok(BalanceBuilder.toCurrentBalanceResponse(balances.get(0)));
+	}
+
+	@SneakyThrows
+	@GetMapping("/last_cycle_balance")
+	public @ResponseBody ResponseEntity<BalanceResponse> getLastCycleBalance(
+			@Valid 
+			@NotNull(message = "account_id cannot be empty") 
+			@RequestParam(value = "account_id", required = false) 
+			Long accountId) {
 
 		log.debug("[BalanceController:getBalance] started");
 
@@ -50,7 +70,7 @@ public class BalanceGlobalController {
 			throw new EntityNotFoundException("No movements found for account " + accountId);
 		}
 
-		return ResponseEntity.ok(BalanceBuilder.toCurrentBalanceResponse(balances.get(0)));
+		return ResponseEntity.ok(BalanceBuilder.toLastcycleBalanceResponse(balances.get(0), repository.getLastCycleBalanceByAccountId(accountId)));
 	}
 
 }

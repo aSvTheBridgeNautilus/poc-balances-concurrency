@@ -37,4 +37,13 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			)
 	Long getCurrentBalanceVersionByAccountId(@Param("accountId") Long accountId);
 
+	@Query(value = "update "
+			+ "Balance b "
+			+ "set "
+			+ "b.version = :version "
+			+ "where "
+			+ "b.accountId = :accountId "
+			)
+	Long updateMovementsVersionByAccountId(@Param("accountId") Long accountId, @Param("version") Long version);
+
 }

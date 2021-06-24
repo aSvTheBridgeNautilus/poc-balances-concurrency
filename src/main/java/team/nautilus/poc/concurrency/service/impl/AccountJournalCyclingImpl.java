@@ -20,13 +20,14 @@ import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.model.constant.TransactionType;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
 import team.nautilus.poc.concurrency.service.AccountJournal;
+import team.nautilus.poc.concurrency.service.AccountJournalCycling;
 import team.nautilus.poc.concurrency.service.AccountJournalOptimistic;
 
 @Slf4j
 @Service
-public class AccountJournalOptimisticImpl extends AccountJournal implements AccountJournalOptimistic {
+public class AccountJournalCyclingImpl extends AccountJournal implements AccountJournalCycling {
 
-	public AccountJournalOptimisticImpl(BalanceRepository repository) {
+	public AccountJournalCyclingImpl(BalanceRepository repository) {
 		super(repository);
 		// TODO Auto-generated constructor stub
 	}
@@ -71,7 +72,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 					throw new ConcurrentModificationException("Dirty reading reach max limit: 3. Transaction will be rejected");
 				}
 				
-				log.info("[AccountJournal:getLastMovementFromAccount] "
+				log.info("[AccountJournal: debitMovement] "
 						+ "not same versions: {} - {}. "
 						+ "Waiting for other updates to "
 						+ "finish...",
@@ -93,17 +94,19 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 						.timestamp(Instant.now())
 						.version(lastMovement.getVersion() + 1)
 						.build();
-			}	
-		
-			log.info("[AccountJournal: debitMovement] update version of Account {} to {} ",
-					lastMovement.getVersion() + 1,
-					lastMovement.getAccountId());
-			getRepository().updateMovementsVersionByAccountId(lastMovement.getAccountId(), lastMovement.getVersion() + 1);
+			}
 			
-			log.info("[AccountJournal: debitMovement] save new movement of Account {}",
-					lastMovement.getAccountId());
+			log.info("[AccountJournal: debitMovement] save new movement for transfer {}",
+					request.getTransferReferenceId());
 			
+			log.info("[AccountJournal: debitMovement] version: {}, {}",
+					lastMovement.getVersion(), 
+					currentVersion);
 			Balance balance = getRepository().save(debitMovement);
+			log.info("[AccountJournal: debitMovement] new-version: {}, last-version: {}, balance: {}",
+					balance.getVersion(), 
+					currentVersion,
+					balance.getBalance());
 			
 			log.info("[AccountJournal: debitMovement] {}", balance);
 			
@@ -121,62 +124,15 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 		try {
 			
 			Balance lastMovement = getLastMovementFromAccount(request.getAccountId());
-			Balance creditMovement =  Balance.builder()
+			
+			Balance creditMovement = Balance.builder()
 					.accountId(lastMovement.getAccountId())
 					.amount(request.getAmount())
 					.balance(lastMovement.getBalance() + request.getAmount())
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
 					.type(TransactionType.TOP)
-					.version(lastMovement.getVersion() + 1)
 					.build();
-			
-			Long currentVersion = null;
-			Integer counter = 1;
-			
-			while (lastMovement.getVersion() 
-					!= (currentVersion = getRepository().getCurrentBalanceVersionByAccountId(lastMovement.getAccountId()))) {
-				
-				counter++;
-				
-				/*
-				 * if we reach 3 dirty reading, rollback transaction v   b            
-				 */
-				if(counter > 3) {
-					throw new ConcurrentModificationException("Dirty reading reach max limit: 3. Transaction will be rejected");
-				}
-				
-				log.info("[AccountJournal:addFundsToAccount] "
-						+ "not same versions: {} - {}. "
-						+ "Waiting for other updates to "
-						+ "finish...",
-						lastMovement.getVersion(), 
-						currentVersion);
-				
-				/*
-				 * wait a bit
-				 */
-				
-//				Thread.sleep(350);
-				
-				lastMovement = getLastMovementFromAccount(request.getAccountId());
-				creditMovement = Balance.builder()
-						.accountId(lastMovement.getAccountId())
-						.amount(request.getAmount())
-						.balance(lastMovement.getBalance() + request.getAmount())
-						.accountId(lastMovement.getAccountId())
-						.timestamp(Instant.now())
-						.version(lastMovement.getVersion() + 1)
-						.build();
-			}	
-			
-			log.info("[AccountJournal: debitMovement] update version of Account {} to {} ",
-					lastMovement.getVersion() + 1,
-					lastMovement.getAccountId());
-			getRepository().updateMovementsVersionByAccountId(lastMovement.getAccountId(), lastMovement.getVersion() + 1);
-			
-			log.info("[AccountJournal: debitMovement] save new movement of Account {}",
-					lastMovement.getAccountId());
 			
 			Balance balance = getRepository().save(creditMovement);
 			

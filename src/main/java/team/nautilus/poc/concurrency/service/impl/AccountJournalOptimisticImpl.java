@@ -53,6 +53,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
 					.type(TransactionType.TOP)
+					.version(lastMovement.getVersion() + 1)
 					.build();
 			
 			Long currentVersion = null;
@@ -63,6 +64,9 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 				
 				counter++;
 				
+				/*
+				 * if we reach 3 dirty reading, rollback transaction
+				 */
 				if(counter > 3) {
 					throw new ConcurrentModificationException("Dirty reading reach max limit: 3. Transaction will be rejected");
 				}
@@ -87,6 +91,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 						.balance(lastMovement.getBalance() - request.getAmount())
 						.accountId(lastMovement.getAccountId())
 						.timestamp(Instant.now())
+						.version(lastMovement.getVersion() + 1)
 						.build();
 			}
 			

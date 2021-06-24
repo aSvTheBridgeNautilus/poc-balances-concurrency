@@ -2,6 +2,7 @@ package team.nautilus.poc.concurrency.service.impl;
 
 import java.security.InvalidParameterException;
 import java.time.Instant;
+import java.util.ConcurrentModificationException;
 
 import javax.persistence.LockModeType;
 
@@ -33,7 +34,6 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 	@Override
 	@SneakyThrows
 	@Transactional(rollbackFor = RuntimeException.class)
-	@Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
 	public BalanceResponse takeFundsFromAccount(BalanceDebitRequest request) {
 		log.debug("[AccountJournalFacade:takeFundsFromAccount] started...");
 		
@@ -63,6 +63,10 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 				
 				counter++;
 				
+				if(counter > 3) {
+					throw new ConcurrentModificationException("Dirty reading reach max limit: 3. Transaction will be rejected");
+				}
+				
 				log.info("[AccountJournal: debitMovement] "
 						+ "not same versions: {} - {}. "
 						+ "Waiting for other updates to "
@@ -89,7 +93,14 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 			log.info("[AccountJournal: debitMovement] save new movement for transfer {}",
 					request.getTransferReferenceId());
 			
+			log.info("[AccountJournal: debitMovement] version: {}, {}",
+					lastMovement.getVersion(), 
+					currentVersion);
 			Balance balance = getRepository().save(debitMovement);
+			log.info("[AccountJournal: debitMovement] new-version: {}, last-version: {}, balance: {}",
+					balance.getVersion(), 
+					currentVersion,
+					balance.getBalance());
 			
 			log.info("[AccountJournal: debitMovement] {}", balance);
 			

@@ -4,6 +4,7 @@ import java.security.InvalidParameterException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 import javax.naming.OperationNotSupportedException;
@@ -33,7 +34,9 @@ public class ErrorHandler {
 		return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
 	}
 
-	@ExceptionHandler(InvalidParameterException.class)
+	@ExceptionHandler({
+		InvalidParameterException.class,
+		ConcurrentModificationException.class})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	protected ResponseEntity<Object> handleInvalidParameter(Exception ex, WebRequest request) {
 		ErrorResponse errorResponse = new ErrorResponse(Instant.now(), ex.getMessage(), request.getDescription(false));

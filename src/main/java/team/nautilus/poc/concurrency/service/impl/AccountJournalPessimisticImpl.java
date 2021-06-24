@@ -15,9 +15,9 @@ import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.persistence.model.Balance;
+import team.nautilus.poc.concurrency.persistence.model.constant.TransactionType;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
-import team.nautilus.poc.concurrency.persistence.repository.model.Balance;
-import team.nautilus.poc.concurrency.persistence.repository.model.constant.TransactionType;
 import team.nautilus.poc.concurrency.service.AccountJournal;
 import team.nautilus.poc.concurrency.service.AccountJournalPessimistic;
 

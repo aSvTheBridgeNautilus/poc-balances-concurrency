@@ -1,4 +1,4 @@
-package team.nautilus.poc.concurrency.persistence.repository.model;
+package team.nautilus.poc.concurrency.persistence.model;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -24,8 +24,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import team.nautilus.poc.concurrency.persistence.repository.model.constant.TransactionType;
-import team.nautilus.poc.concurrency.persistence.repository.model.converter.Instant2TimestampConverter;
+import team.nautilus.poc.concurrency.persistence.model.constant.TransactionType;
+import team.nautilus.poc.concurrency.persistence.model.converter.Instant2TimestampConverter;
 
 @Getter
 @Setter

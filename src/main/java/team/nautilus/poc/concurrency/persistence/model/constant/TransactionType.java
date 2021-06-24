@@ -2,7 +2,7 @@
  * NAUTILUS PROJECT
  */
 
-package team.nautilus.poc.concurrency.persistence.repository.model.constant;
+package team.nautilus.poc.concurrency.persistence.model.constant;
 
 import java.util.Arrays;
 

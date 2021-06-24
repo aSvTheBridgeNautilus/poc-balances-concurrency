@@ -21,8 +21,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
-import team.nautilus.poc.concurrency.persistence.repository.model.Balance;
 
 @Slf4j
 @Validated

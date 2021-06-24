@@ -15,8 +15,8 @@ import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditReques
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.InsufficientFundsException;
+import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
-import team.nautilus.poc.concurrency.persistence.repository.model.Balance;
 
 @Slf4j
 @Getter

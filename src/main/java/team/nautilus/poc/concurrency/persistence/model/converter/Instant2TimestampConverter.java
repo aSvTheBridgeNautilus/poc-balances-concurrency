@@ -2,7 +2,7 @@
  * 
  */
 
-package team.nautilus.poc.concurrency.persistence.repository.model.converter;
+package team.nautilus.poc.concurrency.persistence.model.converter;
 
 import java.sql.Timestamp;
 import java.time.Instant;

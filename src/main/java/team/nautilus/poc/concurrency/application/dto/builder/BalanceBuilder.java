@@ -2,7 +2,7 @@ package team.nautilus.poc.concurrency.application.dto.builder;
 
 import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
-import team.nautilus.poc.concurrency.persistence.repository.model.Balance;
+import team.nautilus.poc.concurrency.persistence.model.Balance;
 
 @Slf4j
 public class BalanceBuilder {

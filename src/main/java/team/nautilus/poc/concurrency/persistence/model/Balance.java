@@ -42,7 +42,7 @@ public class Balance implements Serializable {
 	private static final long serialVersionUID = -7017015847594894320L;
 
 	@Id
-	@SequenceGenerator(name = "poc_idSeqGen", sequenceName = "poc_idSeqGen", allocationSize = 1)
+	@SequenceGenerator(name = "poc_idSeqGen", sequenceName = "poc_idSeqGen", allocationSize = 1, initialValue = 100)
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "poc_idSeqGen")
 	@Column(nullable = false, unique = true)
 	private Long id;

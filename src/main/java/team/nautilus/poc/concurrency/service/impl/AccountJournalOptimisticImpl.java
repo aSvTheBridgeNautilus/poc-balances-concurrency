@@ -56,9 +56,12 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 					.build();
 			
 			Long currentVersion = null;
+			Integer counter = 1;
 			
 			while (lastMovement.getVersion() 
 					!= (currentVersion = getRepository().getCurrentBalanceVersionByAccountId(lastMovement.getAccountId()))) {
+				
+				counter++;
 				
 				log.info("[AccountJournal: debitMovement] "
 						+ "not same versions: {} - {}. "
@@ -71,7 +74,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 				 * wait a bit
 				 */
 				
-				Thread.sleep(350);
+//				Thread.sleep(350);
 				
 				lastMovement = getLastMovementFromAccount(request.getAccountId());
 				debitMovement = Balance.builder()

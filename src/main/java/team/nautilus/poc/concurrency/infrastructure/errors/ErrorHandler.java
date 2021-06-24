@@ -90,7 +90,7 @@ public class ErrorHandler {
 		log.error("handleOther", ex);
 		ErrorResponse errorResponse = new ErrorResponse(Instant.now(), "JSON parse error or unexpected character", request.getDescription(false));
 		
-		return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
 	}
 	
 	@ExceptionHandler(Exception.class)

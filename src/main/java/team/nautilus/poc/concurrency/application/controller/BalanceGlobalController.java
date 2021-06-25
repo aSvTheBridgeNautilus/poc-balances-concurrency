@@ -52,6 +52,26 @@ public class BalanceGlobalController {
 		
 		return ResponseEntity.ok(BalanceBuilder.toCurrentBalanceResponse(balances.get(0)));
 	}
+	
+	@SneakyThrows
+	@GetMapping("/balances_full_details")
+	public @ResponseBody ResponseEntity<Balance> getBalanceFullDetails(
+			@Valid 
+			@NotNull(message = "account_id cannot be empty") 
+			@RequestParam(value = "account_id", required = false) 
+			Long accountId) {
+		
+		log.debug("[BalanceController:getBalance] started");
+		
+		List<Balance> balances = repository.findAllByAccountId(accountId,
+				PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "timestamp")));
+		
+		if (balances.isEmpty()) {
+			throw new EntityNotFoundException("No movements found for account " + accountId);
+		}
+		
+		return ResponseEntity.ok(balances.get(0));
+	}
 
 	@SneakyThrows
 	@GetMapping("/billing_period_balance")

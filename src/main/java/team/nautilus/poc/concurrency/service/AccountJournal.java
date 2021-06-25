@@ -30,8 +30,8 @@ public abstract class AccountJournal {
 	public abstract BalanceResponse addFundsToAccount(BalanceCreditRequest request);
 	
 	@SneakyThrows
-	public Double getLastCycleBalanceByAccountId(Long id) {
-		return repository.getLastCycleBalanceByAccountId(id);
+	public Double getCurrentBillingPeriodBalanceByAccountId(Long id) {
+		return repository.getCurrentBillingPeriodBalanceByAccountId(id);
 	}
 	
 	@SneakyThrows

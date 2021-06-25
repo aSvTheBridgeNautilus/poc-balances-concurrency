@@ -21,7 +21,7 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId ")
-	Double getLastCycleBalanceByAccountId(@Param("accountId") Long accountId);
+	Double getCurrentBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId);
 
 	@Query(value = "select b "
 			+ "from "

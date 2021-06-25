@@ -62,7 +62,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 			Integer counter = 1;
 			
 			while (lastMovement.getVersion() 
-					!= (currentVersion = getRepository().getCurrentBalanceVersionByAccountId(lastMovement.getAccountId()))) {
+					< (currentVersion = getRepository().getCurrentBalanceVersionByAccountId(lastMovement.getAccountId()))) {
 				
 				counter++;
 				
@@ -141,7 +141,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 			Integer counter = 1;
 			
 			while (lastMovement.getVersion() 
-					!= (currentVersion = getRepository().getCurrentBalanceVersionByAccountId(lastMovement.getAccountId()))) {
+					< (currentVersion = getRepository().getCurrentBalanceVersionByAccountId(lastMovement.getAccountId()))) {
 				
 				counter++;
 				

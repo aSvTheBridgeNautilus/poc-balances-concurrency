@@ -70,7 +70,7 @@ public class BalanceGlobalController {
 			throw new EntityNotFoundException("No movements found for account " + accountId);
 		}
 
-		return ResponseEntity.ok(BalanceBuilder.toLastcycleBalanceResponse(balances.get(0), repository.getLastCycleBalanceByAccountId(accountId)));
+		return ResponseEntity.ok(BalanceBuilder.toLastcycleBalanceResponse(balances.get(0), repository.getCurrentBillingPeriodBalanceByAccountId(accountId)));
 	}
 
 }

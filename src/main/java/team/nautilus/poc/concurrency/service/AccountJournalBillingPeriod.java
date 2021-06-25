@@ -5,7 +5,7 @@ import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 
-public interface AccountJournalCycling {
+public interface AccountJournalBillingPeriod {
 
 	BalanceResponse takeFundsFromAccount(BalanceDebitRequest request);
 

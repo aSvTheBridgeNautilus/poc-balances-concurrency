@@ -16,21 +16,34 @@ import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.InsufficientFundsException;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.model.constant.TransactionType;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
 import team.nautilus.poc.concurrency.service.AccountJournal;
-import team.nautilus.poc.concurrency.service.AccountJournalCycling;
+import team.nautilus.poc.concurrency.service.AccountJournalBillingPeriod;
 import team.nautilus.poc.concurrency.service.AccountJournalOptimistic;
 
 @Slf4j
 @Service
-public class AccountJournalCyclingImpl extends AccountJournal implements AccountJournalCycling {
+public class AccountJournalBillingPeriodImpl extends AccountJournal implements AccountJournalBillingPeriod {
 
-	public AccountJournalCyclingImpl(BalanceRepository repository) {
+	public AccountJournalBillingPeriodImpl(BalanceRepository repository) {
 		super(repository);
 		// TODO Auto-generated constructor stub
 	}
+	
+	
+	@SneakyThrows
+	public boolean verifyAccountHasSufficientFunds(Long accountId, Double amountRequired){
+		if (amountRequired > getCurrentBillingPeriodBalanceByAccountId(accountId)) {
+			log.error("[AccountJournal:verifyAccountHasSufficientFunds] Insufficient funds on account " + accountId);
+			throw new InsufficientFundsException("Insufficient funds on account " + accountId);
+		}
+
+		return true;
+	}
+
 
 	@Override
 	@SneakyThrows
@@ -49,64 +62,18 @@ public class AccountJournalCyclingImpl extends AccountJournal implements Account
 			Balance lastMovement = getLastMovementFromAccount(request.getAccountId());
 			Balance debitMovement =  Balance.builder()
 					.accountId(lastMovement.getAccountId())
-					.amount(request.getAmount())
-					.balance(lastMovement.getBalance() - request.getAmount())
+					.amount(-request.getAmount())
+					.balance(getCurrentBillingPeriodBalanceByAccountId(request.getAccountId()) - request.getAmount())
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
 					.type(TransactionType.TOP)
 					.version(lastMovement.getVersion() + 1)
 					.build();
 			
-			Long currentVersion = null;
-			Integer counter = 1;
-			
-			while (lastMovement.getVersion() 
-					!= (currentVersion = getRepository().getCurrentBalanceVersionByAccountId(lastMovement.getAccountId()))) {
-				
-				counter++;
-				
-				/*
-				 * if we reach 3 dirty reading, rollback transaction v   b            
-				 */
-				if(counter > 3) {
-					throw new ConcurrentModificationException("Dirty reading reach max limit: 3. Transaction will be rejected");
-				}
-				
-				log.info("[AccountJournal: debitMovement] "
-						+ "not same versions: {} - {}. "
-						+ "Waiting for other updates to "
-						+ "finish...",
-						lastMovement.getVersion(), 
-						currentVersion);
-				
-				/*
-				 * wait a bit
-				 */
-				
-//				Thread.sleep(350);
-				
-				lastMovement = getLastMovementFromAccount(request.getAccountId());
-				debitMovement = Balance.builder()
-						.accountId(lastMovement.getAccountId())
-						.amount(request.getAmount())
-						.balance(lastMovement.getBalance() - request.getAmount())
-						.accountId(lastMovement.getAccountId())
-						.timestamp(Instant.now())
-						.version(lastMovement.getVersion() + 1)
-						.build();
-			}
-			
-			log.info("[AccountJournal: debitMovement] save new movement for transfer {}",
-					request.getTransferReferenceId());
-			
-			log.info("[AccountJournal: debitMovement] version: {}, {}",
-					lastMovement.getVersion(), 
-					currentVersion);
+
+
 			Balance balance = getRepository().save(debitMovement);
-			log.info("[AccountJournal: debitMovement] new-version: {}, last-version: {}, balance: {}",
-					balance.getVersion(), 
-					currentVersion,
-					balance.getBalance());
+
 			
 			log.info("[AccountJournal: debitMovement] {}", balance);
 			
@@ -128,7 +95,7 @@ public class AccountJournalCyclingImpl extends AccountJournal implements Account
 			Balance creditMovement = Balance.builder()
 					.accountId(lastMovement.getAccountId())
 					.amount(request.getAmount())
-					.balance(lastMovement.getBalance() + request.getAmount())
+					.balance(getCurrentBillingPeriodBalanceByAccountId(request.getAccountId()) + request.getAmount())
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
 					.type(TransactionType.TOP)

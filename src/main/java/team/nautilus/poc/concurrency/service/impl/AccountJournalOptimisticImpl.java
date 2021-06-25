@@ -48,7 +48,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 			Balance lastMovement = getLastMovementFromAccount(request.getAccountId());
 			Balance debitMovement =  Balance.builder()
 					.accountId(lastMovement.getAccountId())
-					.amount(request.getAmount())
+					.amount(-request.getAmount())
 					.balance(lastMovement.getBalance() - request.getAmount())
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
@@ -56,7 +56,9 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 					.version(lastMovement.getVersion() + 1)
 					.build();
 			
-			Long currentVersion = null;
+			Long currentVersion = lastMovement.getVersion();
+			log.debug("[AccountJournalFacade:takeFundsFromAccount] current version: {}", currentVersion);
+			
 			Integer counter = 1;
 			
 			while (lastMovement.getVersion() 
@@ -71,7 +73,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 					throw new ConcurrentModificationException("Dirty reading reach max limit: 3. Transaction will be rejected");
 				}
 				
-				log.info("[AccountJournal:getLastMovementFromAccount] "
+				log.info("[AccountJournal:takeFundsFromAccount] "
 						+ "not same versions: {} - {}. "
 						+ "Waiting for other updates to "
 						+ "finish...",
@@ -87,7 +89,7 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 				lastMovement = getLastMovementFromAccount(request.getAccountId());
 				debitMovement = Balance.builder()
 						.accountId(lastMovement.getAccountId())
-						.amount(request.getAmount())
+						.amount(-request.getAmount())
 						.balance(lastMovement.getBalance() - request.getAmount())
 						.accountId(lastMovement.getAccountId())
 						.timestamp(Instant.now())
@@ -95,20 +97,23 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 						.build();
 			}	
 		
-			log.info("[AccountJournal: debitMovement] update version of Account {} to {} ",
-					lastMovement.getVersion() + 1,
-					lastMovement.getAccountId());
-			getRepository().updateMovementsVersionByAccountId(lastMovement.getAccountId(), lastMovement.getVersion() + 1);
 			
-			log.info("[AccountJournal: debitMovement] save new movement of Account {}",
+			
+			
+			log.info("[AccountJournal:takeFundsFromAccount] save new movement of Account {}",
 					lastMovement.getAccountId());
 			
 			Balance balance = getRepository().save(debitMovement);
+			log.info("[AccountJournal:takeFundsFromAccount] update version of Account {} to {} ",
+					lastMovement.getAccountId(),
+					lastMovement.getVersion() + 1);
+			getRepository().updateMovementsVersionByAccountId(lastMovement.getAccountId(), lastMovement.getVersion() + 1);
 			
-			log.info("[AccountJournal: debitMovement] {}", balance);
+			log.info("[AccountJournal:takeFundsFromAccount] {}", balance);
 			
 			return  BalanceBuilder.toResponse(balance);
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new InvalidParameterException("Couldn't take funds from account " + request.getAccountId());
 		}
 		
@@ -131,7 +136,8 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 					.version(lastMovement.getVersion() + 1)
 					.build();
 			
-			Long currentVersion = null;
+			Long currentVersion = lastMovement.getVersion();
+			log.debug("[AccountJournalFacade:takeFundsFromAccount] current version: {}", currentVersion);
 			Integer counter = 1;
 			
 			while (lastMovement.getVersion() 
@@ -170,20 +176,22 @@ public class AccountJournalOptimisticImpl extends AccountJournal implements Acco
 						.build();
 			}	
 			
-			log.info("[AccountJournal: debitMovement] update version of Account {} to {} ",
-					lastMovement.getVersion() + 1,
-					lastMovement.getAccountId());
-			getRepository().updateMovementsVersionByAccountId(lastMovement.getAccountId(), lastMovement.getVersion() + 1);
+	
 			
-			log.info("[AccountJournal: debitMovement] save new movement of Account {}",
+			log.info("[AccountJournal:addFundsToAccount] save new movement of Account {}",
 					lastMovement.getAccountId());
 			
 			Balance balance = getRepository().save(creditMovement);
+			log.info("[AccountJournal:addFundsToAccount] update version of Account {} to {} ",
+					lastMovement.getAccountId(),
+					lastMovement.getVersion() + 1);
+			getRepository().updateMovementsVersionByAccountId(lastMovement.getAccountId(), lastMovement.getVersion() + 1);
 			
-			log.info("[AccountJournal: addFundsToAccountFrom]: {}", balance);
+			log.info("[AccountJournal:addFundsToAccount]: {}", balance);
 			
 			return  BalanceBuilder.toResponse(balance);
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new InvalidParameterException(
 					"Couldn't transfer funds to account " + request.getAccountId());
 		}

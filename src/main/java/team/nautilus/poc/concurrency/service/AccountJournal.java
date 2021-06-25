@@ -64,7 +64,7 @@ public abstract class AccountJournal {
 		Balance lastMovement = getLastMovementFromAccount(accountId);
 
 		if (amountRequired > lastMovement.getBalance()) {
-			log.debug("[AccountJournal:verifyAccountHasSufficientFunds] Insufficient funds on account " + accountId);
+			log.error("[AccountJournal:verifyAccountHasSufficientFunds] Insufficient funds on account " + accountId);
 			throw new InsufficientFundsException("Insufficient funds on account " + accountId);
 		}
 

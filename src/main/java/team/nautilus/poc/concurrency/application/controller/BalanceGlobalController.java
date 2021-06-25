@@ -54,7 +54,7 @@ public class BalanceGlobalController {
 	}
 
 	@SneakyThrows
-	@GetMapping("/last_cycle_balance")
+	@GetMapping("/billing_period_balance")
 	public @ResponseBody ResponseEntity<BalanceResponse> getLastCycleBalance(
 			@Valid 
 			@NotNull(message = "account_id cannot be empty") 

@@ -1,13 +1,17 @@
 package team.nautilus.poc.concurrency.service;
 
-import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
-import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
-import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 
+@Service
 public interface AccountJournalBillingPeriod {
+	
+	Balance getLastMovementFromAccount(Long accountId);
+	
+	Double getCurrentBillingPeriodBalanceByAccountId(Long accountId);
 
-	BalanceResponse takeFundsFromAccount(BalanceDebitRequest request);
-
-	BalanceResponse addFundsToAccount(BalanceCreditRequest request);
+	List<Balance> getLastMovementFromAllAccounts();
 }

@@ -1,8 +1,12 @@
 package team.nautilus.poc.concurrency.application.dto.builder;
 
+import java.time.LocalDate;
+
 import lombok.extern.slf4j.Slf4j;
+import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
+import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 
 @Slf4j
 public class BalanceBuilder {
@@ -27,13 +31,25 @@ public class BalanceBuilder {
 				.build();
 	}
 
-	public static BalanceResponse toLastcycleBalanceResponse(Balance balance, Double lastCycleBalance) {
+	public static BalanceResponse toCurrentBillingPeriodBalanceResponse(Balance balance, Double billingPeriodBalance) {
 		return BalanceResponse
 				.builder()
 				.id(balance.getId())
 				.accountId(balance.getAccountId())
-				.amount(lastCycleBalance)
+				.amount(billingPeriodBalance)
 				.timestamp(balance.getTimestamp())
+				.build();
+	}
+
+	public static BillingPeriod toInitialBillingPeriod(BalanceInitializationRequest request) {
+		return BillingPeriod
+				.builder()
+				.accountId(request.getAccountId())
+				.userId(request.getUserId())
+				.billingDate(LocalDate.now())
+				.billingDay(Math.min(LocalDate.now().getDayOfMonth(), 27))
+				.billingCycle(30)
+				.balance(0d)
 				.build();
 	}
 

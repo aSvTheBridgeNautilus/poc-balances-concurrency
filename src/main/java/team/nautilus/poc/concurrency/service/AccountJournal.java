@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.application.mapper.dto.LocalDate2InstantUTCMapper;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.InsufficientFundsException;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
@@ -24,6 +25,8 @@ import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
 public abstract class AccountJournal {
 	
 	private final BalanceRepository repository;
+	private final LocalDate2InstantUTCMapper dateUTCMapper;
+	private final BillingPeriodService billingPeriodService;
 	
 	public abstract BalanceResponse takeFundsFromAccount(BalanceDebitRequest request);
 
@@ -31,7 +34,9 @@ public abstract class AccountJournal {
 	
 	@SneakyThrows
 	public Double getCurrentBillingPeriodBalanceByAccountId(Long id) {
-		return repository.getCurrentBillingPeriodBalanceByAccountId(id);
+		return repository.getCurrentBillingPeriodBalanceByAccountId(
+				id,
+				dateUTCMapper.toDTO(billingPeriodService.getCurrentBillingPeriodDate(id)));
 	}
 	
 	@SneakyThrows

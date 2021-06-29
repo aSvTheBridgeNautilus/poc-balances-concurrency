@@ -1,5 +1,6 @@
 package team.nautilus.poc.concurrency.persistence.repository;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -20,8 +21,20 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "from "
 			+ "Balance b "
 			+ "where "
-			+ "b.accountId = :accountId ")
-	Double getCurrentBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId);
+			+ "b.accountId = :accountId "
+			+ "and b.timestamp >= :from ")
+	Double getCurrentBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId, @Param("from") Instant billingPeriodDate);
+
+	@Query(value = "select sum(b.amount) "
+			+ "from "
+			+ "Balance b "
+			+ "where "
+			+ "b.accountId = :accountId "
+			+ "and b.timestamp >= :from "
+			+ "and b.timestamp < :to "
+			+ "")
+	Double getBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId, @Param("from") Instant from, @Param("to") Instant to);
+
 
 	@Query(value = "select b "
 			+ "from "
@@ -47,5 +60,12 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "b.accountId = :accountId "
 			)
 	void updateMovementsVersionByAccountId(@Param("accountId") Long accountId, @Param("version") Long version);
+
+	@Query(value = "select "
+			+ "distinct b "
+			+ "from "
+			+ "Balance b "
+			+ "order by b.timestamp desc ")
+	List<Balance> getLastMovementFromAllAccounts();
 
 }

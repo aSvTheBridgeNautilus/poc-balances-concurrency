@@ -16,18 +16,21 @@ import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.application.mapper.dto.LocalDate2InstantUTCMapper;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.model.constant.TransactionType;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
 import team.nautilus.poc.concurrency.service.AccountJournal;
 import team.nautilus.poc.concurrency.service.AccountJournalOptimistic;
+import team.nautilus.poc.concurrency.service.BillingPeriodService;
 
 @Slf4j
 @Service
 public class AccountJournalOptimisticImpl extends AccountJournal implements AccountJournalOptimistic {
 
-	public AccountJournalOptimisticImpl(BalanceRepository repository) {
-		super(repository);
+	public AccountJournalOptimisticImpl(BalanceRepository repository, LocalDate2InstantUTCMapper dateUTCMapper,
+			BillingPeriodService billingPeriodService) {
+		super(repository, dateUTCMapper, billingPeriodService);
 		// TODO Auto-generated constructor stub
 	}
 

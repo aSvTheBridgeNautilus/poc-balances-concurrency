@@ -10,8 +10,7 @@ import team.nautilus.poc.concurrency.persistence.model.Balance;
 public interface AccountJournalBillingPeriod {
 	
 	Balance getLastMovementFromAccount(Long accountId);
-	
-	Double getCurrentBillingPeriodBalanceByAccountId(Long accountId);
 
 	List<Balance> getLastMovementFromAllAccounts();
+
 }

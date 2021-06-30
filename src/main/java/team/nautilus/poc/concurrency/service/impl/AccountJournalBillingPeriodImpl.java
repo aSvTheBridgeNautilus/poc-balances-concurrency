@@ -41,6 +41,5 @@ public class AccountJournalBillingPeriodImpl extends AccountJournal implements A
 	public List<Balance> getLastMovementFromAllAccounts() {
 		return getRepository().getLastMovementFromAllAccounts();
 	}
-	
 
 }

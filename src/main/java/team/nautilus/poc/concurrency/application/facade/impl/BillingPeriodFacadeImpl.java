@@ -31,9 +31,17 @@ public class BillingPeriodFacadeImpl implements BillingPeriodFacade {
 //        List<Balance> lastMovements = journalService.getLastMovementFromAllAccounts();
         
         for(BillingPeriod currentPeriod : periods) {
-        	billingPeriodService.processNewBillingCycle(
-        			currentPeriod, 
-        			journalService.getCurrentBillingPeriodBalanceByAccountId(currentPeriod.getAccountId()));
+        	try {
+				billingPeriodService.processNewBillingCycle(
+						currentPeriod, 
+						// this step will wait if calculation isn't over
+						billingPeriodService.getCurrenBillingPeriodBalanceFromAccount(currentPeriod.getAccountId()).get());
+			} catch (Exception e) {
+				log.error("[BillingPeriodServiceImpl:updateBillingPeriods] Error updating billing "
+						+ "period of account "
+						+ currentPeriod.getAccountId()
+						+ ", cause: " + e.getLocalizedMessage());
+			}
         }
 
         log.info("[BillingPeriodServiceImpl:updateBillingPeriods] Elapsed time: {}", (System.currentTimeMillis() - start));

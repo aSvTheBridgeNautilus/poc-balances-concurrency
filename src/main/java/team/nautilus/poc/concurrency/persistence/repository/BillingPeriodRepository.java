@@ -21,7 +21,16 @@ public interface BillingPeriodRepository extends JpaRepository<BillingPeriod, Lo
 			+ "where "
 			+ "b.accountId = :accountId "
 			+ "order by b.billingDate desc ")
-	LocalDate getCurrentBillingPeriodByAccountId(@Param("accountId") Long accountId);
+	LocalDate getCurrentBillingDateByAccountId(@Param("accountId") Long accountId);
+	
+	@Query(value = "select "			
+			+ "distinct b "
+			+ "from "
+			+ "BillingPeriod b "
+			+ "where "
+			+ "b.accountId = :accountId "
+			+ "order by b.billingDate desc ")
+	BillingPeriod getCurrentBillingPeriodByAccountId(@Param("accountId") Long accountId);
 
 	@Query(value = "select "
 			+ "distinct b "

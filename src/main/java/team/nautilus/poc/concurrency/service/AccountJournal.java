@@ -33,13 +33,6 @@ public abstract class AccountJournal {
 	public abstract BalanceResponse addFundsToAccount(BalanceCreditRequest request);
 	
 	@SneakyThrows
-	public Double getCurrentBillingPeriodBalanceByAccountId(Long id) {
-		return repository.getCurrentBillingPeriodBalanceByAccountId(
-				id,
-				dateUTCMapper.toDTO(billingPeriodService.getCurrentBillingPeriodDate(id)));
-	}
-	
-	@SneakyThrows
 	public Balance getBalanceFromAccount(Long id) {
 		List<Balance> lastMovements = getLastMovementsFromAccount(id, 0, 1);
 		

@@ -66,9 +66,8 @@ public class Balance implements Serializable {
 	private Long accountId;
 	
 	@JsonProperty("type")
-	@NotNull
 	@Enumerated(EnumType.ORDINAL)
-	@Column(name = "type", nullable = false, columnDefinition = "decimal (1, 0) default 0")
+	@Column(name = "type", columnDefinition = "decimal (1, 0)")
 	private TransactionType type;
 
 	@Version

@@ -1,8 +1,11 @@
 package team.nautilus.poc.concurrency.application.facade.impl;
 
+import static team.nautilus.poc.concurrency.infrastructure.config.BillingPeriodAsyncConfiguration.BILLING_PERIOD_TASK_EXECUTOR;
+
 import java.time.Instant;
 import java.time.LocalDate;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,28 +63,19 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 			throw new BalanceInitializationException("Initialization request invalid for account " + request.getAccountId());
 		}
 	}
-	
-	@SneakyThrows
-	public Double getCurrentBillingPeriodBalanceByAccountId(Long id) {
-		return repository.getCurrentBillingPeriodBalanceByAccountId(
-				id,
-				dateUTCMapper.toDTO(billingService.getCurrentBillingPeriodDate(id)));
-	}
 
 	@Override
 	@SneakyThrows
+	@Async(BILLING_PERIOD_TASK_EXECUTOR)
 	public BalanceResponse getBalanceFromCurrentBillingPeriodOfAccount(Long accountId) {
 		log.info("[AccountJournal:getBalanceFromCurrentBillingPeriodOfAccount]: Calculating balance of current Billing Period for account{}", accountId);
 		
-		// get las movement form account
+		// get last movement form account
 		Balance latestMovement = journalService.getLastMovementFromAccount(accountId);
-		
-		// get last billing date of account
-		Instant latestBillingdate = dateUTCMapper.toDTO(billingService.getCurrentBillingPeriodDate(accountId));
-
 		return BalanceBuilder.toCurrentBillingPeriodBalanceResponse(
 						latestMovement,
-						journalService.getCurrentBillingPeriodBalanceByAccountId(accountId));
+						// updated balance from current billing period
+						billingService.getCurrenBillingPeriodBalanceFromAccount(accountId).get());
 	}
 	
 }

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import org.springframework.aop.interceptor.AsyncExecutionInterceptor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
 import team.nautilus.poc.concurrency.application.mapper.dto.LocalDate2InstantUTCMapper;
+import static team.nautilus.poc.concurrency.infrastructure.config.BillingPeriodAsyncConfiguration.BILLING_PERIOD_TASK_EXECUTOR;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.AsyncCalculationException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.ProcessNewBillingCycleException;
 import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
@@ -38,8 +39,10 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 		return billPeriodRepository.getCurrentBillingDateByAccountId(accountId);
 	}
 
+	
 	@Override
 	@SneakyThrows
+	@Async(BILLING_PERIOD_TASK_EXECUTOR)
 	public CompletableFuture<Double> getCurrenBillingPeriodBalanceFromAccount(Long accountId) {
 		log.debug("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] Started for account {}", accountId);
 
@@ -83,6 +86,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 
 	@Override
 	@SneakyThrows
+	@Async(BILLING_PERIOD_TASK_EXECUTOR)
 	@Transactional(rollbackFor = RuntimeException.class)
 	public void processNewBillingCycle(BillingPeriod currentPeriod, Double currentBalance) {
 		log.debug("[BillingPeriodServiceImpl:processNewBillingCycle] Started for account {}", currentPeriod.getAccountId());

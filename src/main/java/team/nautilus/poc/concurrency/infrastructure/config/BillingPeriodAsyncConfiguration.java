@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @EnableAsync
 public class BillingPeriodAsyncConfiguration {
+	
+	public static final String BILLING_PERIOD_TASK_EXECUTOR = "billingPeriodTaskExecutor";
 
 	@Bean(name = "billingPeriodTaskExecutor")
 	public Executor taskExecutor() {

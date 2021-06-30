@@ -22,13 +22,13 @@ public class BillingPeriodFacadeImpl implements BillingPeriodFacade {
 	private final AccountJournalBillingPeriod journalService;
 	
 	@Async
+	@Override
 	@SneakyThrows
     public void updateBillingPeriods() {
 		log.debug("[BillingPeriodServiceImpl:updateBillingPeriods] Task started");
         final long start = System.currentTimeMillis();
 
         List<BillingPeriod> periods = billingPeriodService.getAllBillingPeriodsForUpdate();
-//        List<Balance> lastMovements = journalService.getLastMovementFromAllAccounts();
         
         for(BillingPeriod currentPeriod : periods) {
         	try {
@@ -37,6 +37,11 @@ public class BillingPeriodFacadeImpl implements BillingPeriodFacade {
 						// this step will wait if calculation isn't over
 						billingPeriodService.getCurrenBillingPeriodBalanceFromAccount(currentPeriod.getAccountId()).get());
 			} catch (Exception e) {
+				/*
+				 * we catch and log the exception
+				 * but we continue with the next 
+				 * items.
+				 */
 				log.error("[BillingPeriodServiceImpl:updateBillingPeriods] Error updating billing "
 						+ "period of account "
 						+ currentPeriod.getAccountId()

@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import lombok.extern.slf4j.Slf4j;
+import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.AsyncCalculationException;
+import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.BalanceInitializationException;
+import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.ProcessNewBillingCycleException;
 
 @Slf4j
 @RestControllerAdvice
@@ -36,7 +39,11 @@ public class ErrorHandler {
 
 	@ExceptionHandler({
 		InvalidParameterException.class,
-		ConcurrentModificationException.class})
+		ConcurrentModificationException.class,
+		BalanceInitializationException.class,
+		AsyncCalculationException.class,
+		ProcessNewBillingCycleException.class,
+		})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	protected ResponseEntity<Object> handleInvalidParameter(Exception ex, WebRequest request) {
 		ErrorResponse errorResponse = new ErrorResponse(Instant.now(), ex.getMessage(), request.getDescription(false));

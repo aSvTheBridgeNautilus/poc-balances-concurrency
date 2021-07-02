@@ -1,6 +1,7 @@
 package team.nautilus.poc.concurrency.application.dto.builder;
 
 import java.time.LocalDate;
+import java.util.concurrent.ThreadLocalRandom;
 
 import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
@@ -47,7 +48,8 @@ public class BalanceBuilder {
 				.accountId(request.getAccountId())
 				.userId(request.getUserId())
 				.billingDate(LocalDate.now())
-				.billingDay(Math.min(LocalDate.now().getDayOfMonth(), 27))
+//				.billingDay(Math.min(LocalDate.now().getDayOfMonth(), 27))
+				.billingDay(ThreadLocalRandom.current().nextInt(1, 17))
 				.billingCycle(30)
 				.balance(0d)
 				.build();

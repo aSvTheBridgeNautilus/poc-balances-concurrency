@@ -98,6 +98,8 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 					.billingDate(LocalDate.now().withDayOfMonth(currentPeriod.getBillingDay()))
 					.billingDay(currentPeriod.getBillingDay())
 					.billingCycle(currentPeriod.getBillingCycle())
+					.transactionsCycle(currentPeriod.getTransactionsCycle())
+					.count(0l) // new billing perios always start at zero
 					.balance(currentBalance)
 					.build();
 			

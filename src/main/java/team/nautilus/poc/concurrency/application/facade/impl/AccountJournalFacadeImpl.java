@@ -50,7 +50,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 			 * implement from here down
 			 */
 			billingService.createFirstBillingPeriodForAccount(request);
-			log.info("[AccountJournal:initializeBalance]: First billing period of account {} initialized", request.getAccountId());
+			log.info("[AccountJournal:initializeBalance] First billing period of account {} initialized", request.getAccountId());
 			return BalanceResponse
 						.builder()
 					    .accountId(request.getAccountId())
@@ -58,6 +58,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 						.build();
 			
 		} catch (BalanceInitializationException ex) {
+			log.error("[AccountJournal:initializeBalance] account {} already initialized", request.getAccountId());
 			throw ex;
 		} catch (RuntimeException ex) {
 			throw new BalanceInitializationException("Initialization request invalid for account " + request.getAccountId());
@@ -68,7 +69,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 	@SneakyThrows
 	@Async(BILLING_PERIOD_TASK_EXECUTOR)
 	public BalanceResponse getBalanceFromCurrentBillingPeriodOfAccount(Long accountId) {
-		log.info("[AccountJournal:getBalanceFromCurrentBillingPeriodOfAccount]: Calculating balance of current Billing Period for account{}", accountId);
+		log.info("[AccountJournal:getBalanceFromCurrentBillingPeriodOfAccount] Calculating balance of current Billing Period for account{}", accountId);
 		
 		// get last movement form account
 		Balance latestMovement = journalService.getLastMovementFromAccount(accountId);

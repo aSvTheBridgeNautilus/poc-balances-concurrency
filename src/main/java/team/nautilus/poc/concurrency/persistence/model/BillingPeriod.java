@@ -58,6 +58,14 @@ public class BillingPeriod implements Serializable {
 	@Column(name = "billing_cycle", columnDefinition = "decimal(3, 0) default 30", nullable = false)
 	private Integer billingCycle;
 
+	@JsonProperty(value = "count")
+	@Column(name = "count", columnDefinition = "decimal(11, 0) default 0", nullable = false)
+	private Long count;
+
+	@JsonProperty(value = "transactions_cycle")
+	@Column(name = "transactions_cycle", columnDefinition = "decimal(11, 0) default 100", nullable = false)
+	private Long transactionsCycle;
+
 	@Column(name = "balance", columnDefinition = "decimal(11, 2) default 0", nullable = false)
 	private Double balance;
 

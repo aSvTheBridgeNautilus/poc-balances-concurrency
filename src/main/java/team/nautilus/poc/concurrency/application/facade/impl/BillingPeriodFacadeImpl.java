@@ -10,7 +10,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.facade.BillingPeriodFacade;
 import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
-import team.nautilus.poc.concurrency.service.AccountJournalBillingPeriod;
+import team.nautilus.poc.concurrency.service.AccountJournal;
 import team.nautilus.poc.concurrency.service.BillingPeriodService;
 
 @Slf4j
@@ -19,7 +19,7 @@ import team.nautilus.poc.concurrency.service.BillingPeriodService;
 public class BillingPeriodFacadeImpl implements BillingPeriodFacade {
 
 	private final BillingPeriodService billingPeriodService;
-	private final AccountJournalBillingPeriod journalService;
+	private final AccountJournal journalService;
 	
 	@Async
 	@Override

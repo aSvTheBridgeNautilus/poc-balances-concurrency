@@ -13,7 +13,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BillingCountData implements Serializable {
+public class BillingPeriodTransactionData implements Serializable {
 
 	/**
 	 * 

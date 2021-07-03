@@ -43,9 +43,8 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "where "
 			+ "b.accountId = :accountId "
 			+ "and b.timestamp >= :from "
-			+ "and b.timestamp < :to "
 			+ "")
-	Object[] getBillingPeriodBalanceTransactionsCountByAccountId(@Param("accountId") Long accountId, @Param("from") Instant from, @Param("to") Instant to);
+	List<Object[]> getBillingPeriodBalanceTransactionsCountByAccountId(@Param("accountId") Long accountId, @Param("from") Instant from);
 
 
 	@Query(value = "select b "

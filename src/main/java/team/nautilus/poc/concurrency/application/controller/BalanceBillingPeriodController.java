@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
+import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
+import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.application.facade.AccountJournalFacade;
-import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.service.AccountJournalBillingPeriod;
 import team.nautilus.poc.concurrency.service.BillingPeriodService;
 
@@ -31,7 +31,7 @@ import team.nautilus.poc.concurrency.service.BillingPeriodService;
 @RequestMapping("/poc/concurrency/billing_period")
 public class BalanceBillingPeriodController {
 
-	private final AccountJournalBillingPeriod billingFacade;
+	private final AccountJournalBillingPeriod journal;
 	private final AccountJournalFacade journalFacade;
 	private final BillingPeriodService billingPeriodService;
 
@@ -54,5 +54,22 @@ public class BalanceBillingPeriodController {
 
 		return ResponseEntity.ok(journalFacade.initializeBalance(initRequest));
 	}
+	
+	@SneakyThrows
+	@PostMapping("/balance_debit")
+	public ResponseEntity<BalanceResponse> balanceDebit(
+			@Valid @RequestBody BalanceDebitRequest debitRequest) {
+		log.debug("[BalanceController:balanceDebit] started...");
+
+		return ResponseEntity.ok(journal.takeFundsFromAccount(debitRequest));
+	}
+	
+	@PostMapping("/balance_credit")
+	public ResponseEntity<BalanceResponse> balanceCredit(
+			@Valid  @RequestBody BalanceCreditRequest creditRequest) {
+		log.debug("[BalanceController:balanceCredit] started...");
+		
+		return ResponseEntity.ok(journal.addFundsToAccount(creditRequest));
+	}	
 
 }

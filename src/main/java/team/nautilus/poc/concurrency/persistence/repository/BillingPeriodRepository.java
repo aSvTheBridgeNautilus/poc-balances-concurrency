@@ -15,28 +15,27 @@ import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 @Repository
 public interface BillingPeriodRepository extends JpaRepository<BillingPeriod, Long> {
 
-	@Query(value = "select max(b.billingDate) "
+	@Query(value = "select max(b.timestamp) "
 			+ "from "
 			+ "BillingPeriod b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "order by b.billingDate desc ")
+			+ "order by b.timestamp desc ")
 	LocalDate getCurrentBillingDateByAccountId(@Param("accountId") Long accountId);
 	
-	@Query(value = "select "			
-			+ "distinct b "
+	@Query(value = "select b "
 			+ "from "
 			+ "BillingPeriod b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "order by b.billingDate desc ")
-	BillingPeriod getCurrentBillingPeriodByAccountId(@Param("accountId") Long accountId);
+			+ "order by b.timestamp desc ")
+	List<BillingPeriod> getCurrentBillingPeriodByAccountId(@Param("accountId") Long accountId, Pageable pageable);
 
 	@Query(value = "select "
 			+ "distinct b "
 			+ "from "
 			+ "BillingPeriod b "
-			+ "order by b.billingDate desc ")
+			+ "order by b.timestamp desc ")
 	List<BillingPeriod> getAllLatestBillingPeriods();
 
 	@Query(value = "select "
@@ -45,7 +44,7 @@ public interface BillingPeriodRepository extends JpaRepository<BillingPeriod, Lo
 			+ "BillingPeriod b "
 //			+ "where "
 //			+ "b.billingDate < :from "
-			+ "order by b.billingDate desc ")
+			+ "order by b.timestamp desc ")
 	Page<BillingPeriod> getAllLatestBillingPeriods(Pageable pageable);
 	
 }

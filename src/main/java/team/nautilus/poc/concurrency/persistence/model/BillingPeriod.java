@@ -1,7 +1,7 @@
 package team.nautilus.poc.concurrency.persistence.model;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.Instant;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -17,7 +17,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import team.nautilus.poc.concurrency.persistence.model.converter.LocalDate2DateConverter;
+import team.nautilus.poc.concurrency.persistence.model.converter.Instant2TimestampConverter;
 
 @Getter
 @Setter
@@ -34,6 +34,11 @@ public class BillingPeriod implements Serializable {
 	 */
 	private static final long serialVersionUID = 7255842483255740629L;
 
+//	@Id
+//	@SequenceGenerator(name = "billingPeriodIdSeqGen", sequenceName = "billingPeriodIdSeqGen", allocationSize = 1, initialValue = 1000)
+//	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "billingPeriodIdSeqGen")
+//	private Long id;
+	
 	@Id
 	@JsonProperty(value = "account_id")
 	@Column(name = "account_id", nullable = false, unique = false)
@@ -43,12 +48,18 @@ public class BillingPeriod implements Serializable {
 	@JsonProperty(value = "user_id")
 	@Column(name = "user_id", nullable = false, unique = false)
 	private String userId;
-
+	
 	@Id
-	@JsonProperty(value = "billing_date")
-	@Convert(converter = LocalDate2DateConverter.class)
-	@Column(name = "billing_date", columnDefinition = "date", nullable = false, unique = false)
-	private LocalDate billingDate;
+	@JsonProperty("timestamp_utc")
+	@Column(name = "timestamp_utc")
+	@Convert(converter = Instant2TimestampConverter.class)
+	private Instant timestamp;
+
+//	@Id
+//	@JsonProperty(value = "billing_date")
+//	@Convert(converter = LocalDate2DateConverter.class)
+//	@Column(name = "billing_date", columnDefinition = "date", nullable = false, unique = false)
+//	private LocalDate billingDate;
 
 	@JsonProperty(value = "billing_day")
 	@Column(name = "billing_day", columnDefinition = "decimal(2, 0)", nullable = false)

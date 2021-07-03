@@ -4,16 +4,17 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
-import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
-import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.mapper.dto.LocalDate2InstantUTCMapper;
+import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.InsufficientFundsException;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
 import team.nautilus.poc.concurrency.service.AccountJournal;
 import team.nautilus.poc.concurrency.service.AccountJournalBillingPeriod;
 import team.nautilus.poc.concurrency.service.BillingPeriodService;
 
+@Slf4j
 @Service
 public class AccountJournalBillingPeriodImpl extends AccountJournal implements AccountJournalBillingPeriod {
 
@@ -26,20 +27,20 @@ public class AccountJournalBillingPeriodImpl extends AccountJournal implements A
 	}
 
 	@Override
-	public BalanceResponse takeFundsFromAccount(BalanceDebitRequest request) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public BalanceResponse addFundsToAccount(BalanceCreditRequest request) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public List<Balance> getLastMovementFromAllAccounts() {
 		return getRepository().getLastMovementFromAllAccounts();
 	}
+	
+	@Override
+	@SneakyThrows
+	public boolean verifyAccountHasSufficientFunds(Long accountId, Double amountRequired) {
+		if (amountRequired > getBillingPeriodService().getCurrenBillingPeriodBalanceFromAccount(accountId).get()) {
+			log.error("[AccountJournal:verifyAccountHasSufficientFunds] Insufficient funds on account " + accountId);
+			throw new InsufficientFundsException("Insufficient funds on account " + accountId);
+		}
+
+		return true;
+	}
+
 
 }

@@ -1,22 +1,27 @@
 package team.nautilus.poc.concurrency.service;
 
+import java.security.InvalidParameterException;
+import java.time.Instant;
 import java.util.List;
 
 import javax.persistence.EntityNotFoundException;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.application.mapper.dto.LocalDate2InstantUTCMapper;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.InsufficientFundsException;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
+import team.nautilus.poc.concurrency.persistence.model.constant.TransactionType;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
 
 @Slf4j
@@ -28,9 +33,73 @@ public abstract class AccountJournal {
 	private final LocalDate2InstantUTCMapper dateUTCMapper;
 	private final BillingPeriodService billingPeriodService;
 	
-	public abstract BalanceResponse takeFundsFromAccount(BalanceDebitRequest request);
+	@SneakyThrows
+	@Transactional(rollbackFor = RuntimeException.class)
+	public BalanceResponse takeFundsFromAccount(BalanceDebitRequest request) {
+		log.debug("[AccountJournalFacade:takeFundsFromAccount] started...");
+		
+		verifyAccountHasSufficientFunds(request.getAccountId(), request.getAmount());
+		
+		try {
+			
+			Balance lastMovement = getLastMovementFromAccount(request.getAccountId());
+			Balance debitMovement =  Balance.builder()
+					.accountId(lastMovement.getAccountId())
+					.amount(-request.getAmount())
+					.balance(billingPeriodService.getCurrenBillingPeriodBalanceFromAccount(request.getAccountId()).get() - request.getAmount())
+					.accountId(lastMovement.getAccountId())
+					.timestamp(Instant.now())
+					.type(TransactionType.TOP)
+					.version(lastMovement.getVersion() + 1)
+					.build();
+			
+			
+			log.info("[AccountJournal:takeFundsFromAccount] save new movement of Account {}",
+					lastMovement.getAccountId());
+			
+			Balance balance = getRepository().save(debitMovement);
+		
+			log.info("[AccountJournal:takeFundsFromAccount] {}", balance);
+			
+			return  BalanceBuilder.toResponse(balance);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new InvalidParameterException("Couldn't take funds from account " + request.getAccountId());
+		}
+	}
+	
+	@SneakyThrows
+	@Transactional(rollbackFor = Exception.class)
+	public BalanceResponse addFundsToAccount(BalanceCreditRequest request) {
+		try {
+			
+			Balance lastMovement = getLastMovementFromAccount(request.getAccountId());
+			Balance creditMovement =  Balance.builder()
+					.accountId(lastMovement.getAccountId())
+					.amount(request.getAmount())
+					.balance(billingPeriodService.getCurrenBillingPeriodBalanceFromAccount(request.getAccountId()).get()  + request.getAmount())
+					.accountId(lastMovement.getAccountId())
+					.timestamp(Instant.now())
+					.type(TransactionType.TOP)
+					.version(lastMovement.getVersion() + 1)
+					.build();
 
-	public abstract BalanceResponse addFundsToAccount(BalanceCreditRequest request);
+			
+			log.info("[AccountJournal:addFundsToAccount] save new movement of Account {}",
+					lastMovement.getAccountId());
+			
+			Balance balance = getRepository().save(creditMovement);
+
+			log.info("[AccountJournal:addFundsToAccount]: {}", balance);
+			
+			return  BalanceBuilder.toResponse(balance);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new InvalidParameterException(
+					"Couldn't transfer funds to account " + request.getAccountId());
+		}
+	}
+
 	
 	@SneakyThrows
 	public Balance getBalanceFromAccount(Long id) {

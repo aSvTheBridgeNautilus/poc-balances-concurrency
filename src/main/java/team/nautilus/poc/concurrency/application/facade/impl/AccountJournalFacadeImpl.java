@@ -188,7 +188,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 		Balance sourceMov = BalanceBuilder.toNewMovement(sourceAccount, request, timestamp, OperationType.DEBIT);
 		Balance targetMov = BalanceBuilder.toNewMovement(targetAccount, request, timestamp, OperationType.CREDIT);
 
-		boolean result = journalService.persistMovementsInSingleTransaction(sourceMov, targetMov, balanceTransferCompleteMapper.toDTO(request));
+		boolean result = journalService.persistMovementsInSingleTransaction(sourceMov, targetMov);
 		return TransferResponse
 				   .builder()
 				   .result(Boolean.TRUE.equals(result) ? "OK" : "Transfer failed")

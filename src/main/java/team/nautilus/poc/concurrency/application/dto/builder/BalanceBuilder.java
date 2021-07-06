@@ -2,16 +2,17 @@ package team.nautilus.poc.concurrency.application.dto.builder;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.concurrent.ThreadLocalRandom;
 
 import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
+import team.nautilus.poc.concurrency.application.dto.request.BalanceTransferRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 import team.nautilus.poc.concurrency.persistence.model.constant.OperationType;
+import team.nautilus.poc.concurrency.persistence.model.embeddables.BalanceMovement;
 
 @Slf4j
 public class BalanceBuilder {
@@ -111,6 +112,42 @@ public class BalanceBuilder {
 		return newMovement;
 	}
 	
+	
+	public static Balance toNewMovement(
+			Balance source, 
+			BalanceTransferRequest request, 
+			Instant timestamp,
+			OperationType operationType) {
+		log.debug("[AccountJournal:generateNewMovementFor] started");
+		
+		Balance newMovement = Balance
+				.builder()
+				.accountId(source.getAccountId())
+				.operationType(operationType)
+				.timestamp(timestamp)
+				.movement(BalanceMovement.builder()		
+						.id(source.getMovement().getId() + 1)
+						.build())
+				.build();
+		BalanceMovement mov = newMovement.getMovement();
+		
+		switch (operationType) {
+		case DEBIT:
+			newMovement.setAmount(-request.getAmount()); // negative for source/DEBIT
+			newMovement.setBalance(source.getBalance() - request.getAmount());
+			break;
+		case CREDIT:
+			newMovement.setAmount(request.getAmount()); // positive for source/CREDIT
+			newMovement.setBalance(source.getBalance() + request.getAmount());
+			break;
+		case INITIAL:
+			break;
+		default:
+			break;
+		}
+		
+		return newMovement;
+	}
 
 
 }

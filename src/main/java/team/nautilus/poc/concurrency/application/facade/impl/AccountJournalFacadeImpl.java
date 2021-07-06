@@ -3,6 +3,9 @@ package team.nautilus.poc.concurrency.application.facade.impl;
 import java.security.InvalidParameterException;
 import java.time.Instant;
 import java.util.ConcurrentModificationException;
+import java.util.Objects;
+
+import javax.validation.Valid;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,15 +17,15 @@ import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
+import team.nautilus.poc.concurrency.application.dto.request.BalanceTransferRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.application.dto.response.TransferResponse;
 import team.nautilus.poc.concurrency.application.facade.AccountJournalFacade;
-import team.nautilus.poc.concurrency.application.mapper.dto.LocalDate2InstantUTCMapper;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.BalanceInitializationException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.InsufficientFundsException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.ProcessNewBillingCycleException;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.model.constant.OperationType;
-import team.nautilus.poc.concurrency.persistence.model.constant.TransactionType;
 import team.nautilus.poc.concurrency.persistence.model.embeddables.BalanceMovement;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
 import team.nautilus.poc.concurrency.service.AccountJournal;
@@ -169,6 +172,27 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 		return BalanceBuilder.toCurrentBillingPeriodBalanceResponse(
 						latestMovement,
 						billingService.getCurrenBillingPeriodBalanceFromAccount(latestMovement));
+	}
+
+	@Override
+	public TransferResponse registerTransfer(@Valid BalanceTransferRequest request) {
+		log.debug("[AccountJournalFacade:registerTransfer] started");
+		Balance sourceAccount = journalService.getLastMovementFromAccount(request.getSourceAccountId());
+		
+		verifyAccountHasSufficientFunds(sourceAccount, request.getAmount());
+		
+		Balance targetAccount = journalService.getLastMovementFromAccount(request.getTargetAccountId());
+
+		Instant timestamp = Instant.now(); // always in UTC
+
+		Balance sourceMov = BalanceBuilder.toNewMovement(sourceAccount, request, timestamp, OperationType.DEBIT);
+		Balance targetMov = BalanceBuilder.toNewMovement(targetAccount, request, timestamp, OperationType.CREDIT);
+
+		boolean result = journalService.persistMovementsInSingleTransaction(sourceMov, targetMov, balanceTransferCompleteMapper.toDTO(request));
+		return TransferResponse
+				   .builder()
+				   .result(Boolean.TRUE.equals(result) ? "OK" : "Transfer failed")
+				   .build();
 	}
 	
 }

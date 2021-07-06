@@ -24,7 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
+import team.nautilus.poc.concurrency.application.dto.request.BalanceTransferRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.application.dto.response.TransferResponse;
 import team.nautilus.poc.concurrency.application.facade.AccountJournalFacade;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
@@ -53,7 +55,7 @@ public class BalanceController {
 
 	@SneakyThrows
 	@PostMapping("/balance_init")
-	public ResponseEntity<BalanceResponse> initBalance(
+	public @ResponseBody ResponseEntity<BalanceResponse> initBalance(
 			@Valid  
 			@RequestBody 
 			BalanceInitializationRequest initRequest) {
@@ -64,7 +66,7 @@ public class BalanceController {
 	
 	@SneakyThrows
 	@PostMapping("/balance_debit")
-	public ResponseEntity<BalanceResponse> balanceDebit(
+	public @ResponseBody ResponseEntity<BalanceResponse> balanceDebit(
 			@Valid @RequestBody BalanceDebitRequest debitRequest) {
 		log.debug("[BalanceController:balanceDebit] started...");
 
@@ -72,7 +74,7 @@ public class BalanceController {
 	}
 	
 	@PostMapping("/balance_credit")
-	public ResponseEntity<BalanceResponse> balanceCredit(
+	public @ResponseBody ResponseEntity<BalanceResponse> balanceCredit(
 			@Valid  
 			@RequestBody 
 			BalanceCreditRequest creditRequest) {
@@ -80,6 +82,17 @@ public class BalanceController {
 		
 		return ResponseEntity.ok(journalFacade.addFundsToAccount(creditRequest));
 	}	
+	
+	@SneakyThrows
+	@PostMapping("/balance_transfer")
+	public @ResponseBody ResponseEntity<TransferResponse> transferBalance(
+			@Valid 
+			@RequestBody 
+			BalanceTransferRequest transferRequest) {
+		log.debug("[BalanceController:createBalanceTransfer] started...");
+
+		return ResponseEntity.ok(journalFacade.registerTransfer(transferRequest));
+	}
 	
 	@SneakyThrows
 	@GetMapping("/balances_full_details")

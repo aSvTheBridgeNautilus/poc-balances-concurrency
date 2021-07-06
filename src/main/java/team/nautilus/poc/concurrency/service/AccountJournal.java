@@ -16,4 +16,12 @@ public interface AccountJournal {
 
 	List<Balance> getLastMovementFromAllAccounts();
 
+	boolean persistMovementsInSingleTransaction(Balance source, Balance target);
+
+	boolean checkMovementsExistInDB(Long sourceMovId, Long targetMovId);
+
+	List<Balance> getLastMovementsFromAccount(Long id, int offset, int limit);
+
+	Balance getBalanceFromAccount(Long id);
+
 }

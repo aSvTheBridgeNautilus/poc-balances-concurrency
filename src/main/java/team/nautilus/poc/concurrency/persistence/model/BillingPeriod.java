@@ -46,7 +46,7 @@ public class BillingPeriod implements Serializable {
 	
 	@Id
 	@JsonProperty("timestamp_utc")
-	@Column(name = "timestamp_utc")
+	@Column(name = "timestamp_utc", columnDefinition = "timestamp")
 	@Convert(converter = Instant2TimestampConverter.class)
 	private Instant timestamp;
 	

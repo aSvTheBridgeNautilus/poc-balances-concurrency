@@ -11,8 +11,6 @@ import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 
 public interface BillingPeriodService {
 
-	LocalDate getCurrentBillingPeriodDate(Long accountId);
-
 	BillingPeriod getCurrentBillingPeriodFromAccount(Long accountId);
 
 	void createFirstBillingPeriodForAccount(BalanceInitializationRequest request);

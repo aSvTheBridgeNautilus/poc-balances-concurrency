@@ -1,7 +1,6 @@
 package team.nautilus.poc.concurrency.service.impl;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
@@ -32,15 +31,6 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	private final BillingPeriodRepository billingRepository;
 	private final BalanceRepository balanceRepository;
 	private final BillingPeriodTransactionDataMapper transactionDataMapper;
-
-	@Override
-	public LocalDate getCurrentBillingPeriodDate(Long accountId) {
-		log.debug(
-				"[BillingPeriodServiceImpl:getCurrentBillingPeriodDate] "
-				+ "get start date of billing period for account {}",
-				accountId);
-		return billingRepository.getCurrentBillingDateByAccountId(accountId);
-	}
 	
 	@Override
 	@SneakyThrows
@@ -52,8 +42,8 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 			BillingPeriod newPeriod = BillingPeriod
 					.builder()
 					.accountId(lastMovementOfPeriod.getAccountId())
-//					.userId(lastMovementOfPeriod.getUserId())
-					.timestamp(lastMovementOfPeriod.getTimestamp())
+					.userId("user" + lastMovementOfPeriod.getAccountId() + "@nautilus.team")
+					.timestamp(lastMovementOfPeriod.getTimestamp()) 
 					.movementId(lastMovementOfPeriod.getMovement().getId())
 					.transactionsCycle(transactionCycle)
 					.balance(currentBalance)
@@ -106,7 +96,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 									+ "Transaction count exceeded cycle limit of {} for account {}. "
 									+ "New billing period will be processed for account {}",
 							lastBillingPeriod.getTransactionsCycle(), accountId, accountId);
-					processNewBillingCycle(null, lastMovementIdOfPeriod, lastPeriodBalance);
+					processNewBillingCycle(lastMovementOfPeriod, lastBillingPeriod.getTransactionsCycle(), lastPeriodBalance);
 
 				}
 				

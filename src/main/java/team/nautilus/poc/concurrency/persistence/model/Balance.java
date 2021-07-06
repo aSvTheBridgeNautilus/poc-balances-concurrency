@@ -59,7 +59,7 @@ public class Balance implements Serializable {
 
 	@JsonProperty("timestamp_utc")
 	@NotNull
-	@Column(name = "timestamp_utc")
+	@Column(name = "timestamp_utc", columnDefinition = "timestamp")
 	@Convert(converter = Instant2TimestampConverter.class)
 	private Instant timestamp;
 

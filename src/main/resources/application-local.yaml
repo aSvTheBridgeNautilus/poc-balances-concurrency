@@ -2,10 +2,18 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-      show_sql: true
-      format_sql: false
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
   datasource:
     url: jdbc:postgresql://localhost:5432/compose-postgres
     driver-class-name: org.postgresql.Driver
     username: compose-postgres
     password: compose-postgres
+
+logging:
+  level:
+    org:
+      hibernate:
+        type: trace

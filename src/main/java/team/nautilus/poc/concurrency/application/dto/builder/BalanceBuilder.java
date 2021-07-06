@@ -3,6 +3,8 @@ package team.nautilus.poc.concurrency.application.dto.builder;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import org.springframework.stereotype.Component;
+
 import lombok.extern.slf4j.Slf4j;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
@@ -115,9 +117,9 @@ public class BalanceBuilder {
 	
 	public static Balance toNewMovement(
 			Balance source, 
-			BalanceTransferRequest request, 
-			Instant timestamp,
-			OperationType operationType) {
+			Double billingPeriodBalance, 
+			Long newMovementId,
+			BalanceTransferRequest request, Instant timestamp, OperationType operationType) {
 		log.debug("[AccountJournal:generateNewMovementFor] started");
 		
 		Balance newMovement = Balance
@@ -126,7 +128,7 @@ public class BalanceBuilder {
 				.operationType(operationType)
 				.timestamp(timestamp)
 				.movement(BalanceMovement.builder()		
-						.id(source.getMovement().getId() + 1)
+						.id(newMovementId)
 						.build())
 				.build();
 		BalanceMovement mov = newMovement.getMovement();

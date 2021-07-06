@@ -23,5 +23,7 @@ public interface AccountJournal {
 	List<Balance> getLastMovementsFromAccount(Long id, int offset, int limit);
 
 	Balance getBalanceFromAccount(Long id);
+	
+	Long generateNewMovementIdForAccount(Long accountId);
 
 }

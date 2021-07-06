@@ -18,13 +18,21 @@ import team.nautilus.poc.concurrency.persistence.model.Balance;
 public interface BalanceRepository extends JpaRepository<Balance, Long> {
 
 	
+	@Query(value = "select max(b.movement.id) "
+			+ "from "
+			+ "Balance b "
+			+ "where "
+			+ "b.accountId = :accountId ")
+	Long getLastMovementIdByAccoundId(@Param("accountId") Long accountId);
+
 	@Query(value = "select sum(b.amount) "
 			+ "from "
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
+			+ "and b.movement.id > :movementId "
 			+ "and b.timestamp >= :from ")
-	Double getCurrentBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId, @Param("from") Instant billingPeriodDate);
+	Double getCurrentBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId, @Param("movementId") Long movementId, @Param("from") Instant billingPeriodDate);
 
 	@Query(value = "select sum(b.amount) "
 			+ "from "
@@ -46,8 +54,7 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "and b.timestamp >= :from "
 			+ "and b.movement.id >= :movementId "
 			+ "")
-	List<Object[]> getBillingPeriodBalanceTransactionsCountByAccountId(@Param("accountId") Long accountId, @Param("accountId") Long movementId, @Param("movementId") Instant from);
-
+	List<Object[]> getBillingPeriodBalanceTransactionsCountByAccountId(@Param("accountId") Long accountId, @Param("movementId") Long movementId, @Param("from") Instant from);
 
 	@Query(value = "select b "
 			+ "from "

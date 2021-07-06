@@ -92,4 +92,9 @@ public class AccountJournalImpl implements AccountJournal {
 		return sourceMovExists && targetMovExists;
 	}
 
+	@Override
+	public Long generateNewMovementIdForAccount(Long accountId) {
+		return balanceRepository.getLastMovementIdByAccoundId(accountId) + 1l;
+	}
+
 }

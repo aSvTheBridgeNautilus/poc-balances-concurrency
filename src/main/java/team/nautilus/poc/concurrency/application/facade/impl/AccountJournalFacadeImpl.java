@@ -42,14 +42,15 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 	
 	@Override
 	@SneakyThrows
-	public boolean verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired) {
+	public Double verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired) {
 		Long accountId = lastMovement.getAccountId();
-		if (amountRequired > billingService.getCurrenBillingPeriodBalanceFromAccount(lastMovement)) {
+		Double periodBalance = null;
+		if (amountRequired > (periodBalance = billingService.getCurrenBillingPeriodBalanceFromAccount(lastMovement))) {
 			log.error("[AccountJournal:verifyAccountHasSufficientFunds] Insufficient funds on account " + accountId);
 			throw new InsufficientFundsException("Insufficient funds on account " + accountId);
 		}
 
-		return true;
+		return periodBalance;
 	}
 	
 	@SneakyThrows
@@ -60,6 +61,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 		try {
 			
 			Balance lastMovement = journalService.getLastMovementFromAccount(request.getAccountId());
+			Long accountId = lastMovement.getAccountId();
 			verifyAccountHasSufficientFunds(lastMovement, request.getAmount());
 			Balance debitMovement =  Balance.builder()
 					.accountId(lastMovement.getAccountId())
@@ -68,6 +70,10 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
 					.operationType(OperationType.DEBIT)
+					.movement(BalanceMovement
+							.builder()
+							.id(journalService.generateNewMovementIdForAccount(accountId))
+							.build())
 					.build();
 			
 			
@@ -100,6 +106,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 		try {
 			
 			Balance lastMovement = journalService.getLastMovementFromAccount(request.getAccountId());
+			Long accountId = lastMovement.getAccountId();
 			Balance creditMovement =  Balance.builder()
 					.accountId(lastMovement.getAccountId())
 					.amount(request.getAmount())
@@ -107,6 +114,10 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
 					.operationType(OperationType.CREDIT)
+					.movement(BalanceMovement
+							.builder()
+							.id(journalService.generateNewMovementIdForAccount(accountId))
+							.build())
 					.build();
 
 			
@@ -179,14 +190,24 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 		log.debug("[AccountJournalFacade:registerTransfer] started");
 		Balance sourceAccount = journalService.getLastMovementFromAccount(request.getSourceAccountId());
 		
-		verifyAccountHasSufficientFunds(sourceAccount, request.getAmount());
+		Double sourcePeriodBalance = verifyAccountHasSufficientFunds(sourceAccount, request.getAmount());
 		
 		Balance targetAccount = journalService.getLastMovementFromAccount(request.getTargetAccountId());
 
 		Instant timestamp = Instant.now(); // always in UTC
 
-		Balance sourceMov = BalanceBuilder.toNewMovement(sourceAccount, request, timestamp, OperationType.DEBIT);
-		Balance targetMov = BalanceBuilder.toNewMovement(targetAccount, request, timestamp, OperationType.CREDIT);
+		Balance sourceMov = BalanceBuilder.toNewMovement(
+				sourceAccount, 
+				sourcePeriodBalance, 
+				journalService.generateNewMovementIdForAccount(sourceAccount.getAccountId()), 
+				request, 
+				timestamp, OperationType.DEBIT);
+		Balance targetMov = BalanceBuilder.toNewMovement(
+				targetAccount, 
+				billingService.getCurrenBillingPeriodBalanceFromAccount(targetAccount),
+				journalService.generateNewMovementIdForAccount(targetAccount.getAccountId()), 
+				request, 
+				timestamp, OperationType.CREDIT);
 
 		boolean result = journalService.persistMovementsInSingleTransaction(sourceMov, targetMov);
 		return TransferResponse

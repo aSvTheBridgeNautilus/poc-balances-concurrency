@@ -19,7 +19,7 @@ public interface AccountJournalFacade {
 
 	BalanceResponse getBalanceFromCurrentBillingPeriodOfAccount(Long accountId);
 
-	boolean verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired);
+	Double verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired);
 
 	BalanceResponse addFundsToAccount(@Valid BalanceCreditRequest creditRequest);
 

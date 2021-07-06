@@ -8,6 +8,7 @@ import team.nautilus.poc.concurrency.application.dto.request.BalanceCreditReques
 import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.persistence.model.Balance;
 
 @Component
 public interface AccountJournalFacade {
@@ -16,7 +17,7 @@ public interface AccountJournalFacade {
 
 	BalanceResponse getBalanceFromCurrentBillingPeriodOfAccount(Long accountId);
 
-	boolean verifyAccountHasSufficientFunds(Long accountId, Double amountRequired);
+	boolean verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired);
 
 	BalanceResponse addFundsToAccount(@Valid BalanceCreditRequest creditRequest);
 

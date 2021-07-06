@@ -3,6 +3,7 @@ package team.nautilus.poc.concurrency.persistence.repository;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -43,8 +44,9 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "where "
 			+ "b.accountId = :accountId "
 			+ "and b.timestamp >= :from "
+			+ "and b.movement.id >= :movementId "
 			+ "")
-	List<Object[]> getBillingPeriodBalanceTransactionsCountByAccountId(@Param("accountId") Long accountId, @Param("from") Instant from);
+	List<Object[]> getBillingPeriodBalanceTransactionsCountByAccountId(@Param("accountId") Long accountId, @Param("accountId") Long movementId, @Param("movementId") Instant from);
 
 
 	@Query(value = "select b "
@@ -53,24 +55,15 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "where "
 			+ "b.accountId = :accountId ")
 	List<Balance> findAllByAccountId(@Param("accountId") Long accountId, Pageable pageable);
-	
-	@Query(value = "select max(b.version) "
+
+	@Query(value = "select b "
 			+ "from "
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			)
-	Long getCurrentBalanceVersionByAccountId(@Param("accountId") Long accountId);
-
-	@Modifying
-	@Query(value = "update "
-			+ "Balance b "
-			+ "set "
-			+ "b.version = :version "
-			+ "where "
-			+ "b.accountId = :accountId "
-			)
-	void updateMovementsVersionByAccountId(@Param("accountId") Long accountId, @Param("version") Long version);
+			+ "and b.operationType = 2 "
+			+ "order by b.timestamp asc ")
+	List<Balance> getInitialBalanceFromAccount(@Param("accountId") Long accountId, Pageable pageable);
 
 	@Query(value = "select "
 			+ "distinct b "

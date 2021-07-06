@@ -33,11 +33,6 @@ public class BillingPeriod implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 7255842483255740629L;
-
-//	@Id
-//	@SequenceGenerator(name = "billingPeriodIdSeqGen", sequenceName = "billingPeriodIdSeqGen", allocationSize = 1, initialValue = 1000)
-//	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "billingPeriodIdSeqGen")
-//	private Long id;
 	
 	@Id
 	@JsonProperty(value = "account_id")
@@ -54,24 +49,24 @@ public class BillingPeriod implements Serializable {
 	@Column(name = "timestamp_utc")
 	@Convert(converter = Instant2TimestampConverter.class)
 	private Instant timestamp;
+	
+	@Id
+	@JsonProperty("movement_id")
+	@Column(name = "movement_id")
+	@Convert(converter = Instant2TimestampConverter.class)
+	private Long movementId;
 
-//	@Id
-//	@JsonProperty(value = "billing_date")
-//	@Convert(converter = LocalDate2DateConverter.class)
-//	@Column(name = "billing_date", columnDefinition = "date", nullable = false, unique = false)
-//	private LocalDate billingDate;
+//	@JsonProperty(value = "billing_day")
+//	@Column(name = "billing_day", columnDefinition = "decimal(2, 0)", nullable = false)
+//	private Integer billingDay;
 
-	@JsonProperty(value = "billing_day")
-	@Column(name = "billing_day", columnDefinition = "decimal(2, 0)", nullable = false)
-	private Integer billingDay;
+//	@JsonProperty(value = "billing_cycle")
+//	@Column(name = "billing_cycle", columnDefinition = "decimal(3, 0) default 30", nullable = false)
+//	private Integer billingCycle;
 
-	@JsonProperty(value = "billing_cycle")
-	@Column(name = "billing_cycle", columnDefinition = "decimal(3, 0) default 30", nullable = false)
-	private Integer billingCycle;
-
-	@JsonProperty(value = "count")
-	@Column(name = "count", columnDefinition = "decimal(11, 0) default 0", nullable = false)
-	private Long count;
+//	@JsonProperty(value = "transactions_count")
+//	@Column(name = "transactions_count", columnDefinition = "decimal(11, 0) default 0", nullable = false)
+//	private Long transactionsCount;
 
 	@JsonProperty(value = "transactions_cycle")
 	@Column(name = "transactions_cycle", columnDefinition = "decimal(11, 0) default 100", nullable = false)

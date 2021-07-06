@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
-import javax.naming.OperationNotSupportedException;
 import javax.persistence.EntityNotFoundException;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import lombok.extern.slf4j.Slf4j;
-import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.AsyncCalculationException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.BalanceInitializationException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.ProcessNewBillingCycleException;
 
@@ -41,8 +39,7 @@ public class ErrorHandler {
 		InvalidParameterException.class,
 		ConcurrentModificationException.class,
 		BalanceInitializationException.class,
-		AsyncCalculationException.class,
-		ProcessNewBillingCycleException.class,
+		ProcessNewBillingCycleException.class
 		})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	protected ResponseEntity<Object> handleInvalidParameter(Exception ex, WebRequest request) {

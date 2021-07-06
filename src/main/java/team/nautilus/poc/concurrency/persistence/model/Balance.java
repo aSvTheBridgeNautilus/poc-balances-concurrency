@@ -4,8 +4,11 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Convert;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -14,7 +17,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,8 +26,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import team.nautilus.poc.concurrency.persistence.model.constant.TransactionType;
+import team.nautilus.poc.concurrency.persistence.model.constant.OperationType;
 import team.nautilus.poc.concurrency.persistence.model.converter.Instant2TimestampConverter;
+import team.nautilus.poc.concurrency.persistence.model.embeddables.BalanceMovement;
 
 @Getter
 @Setter
@@ -65,31 +68,30 @@ public class Balance implements Serializable {
 	@NotNull
 	private Long accountId;
 	
-	@JsonProperty("type")
+	@JsonProperty("operation_type")
 	@Enumerated(EnumType.ORDINAL)
-	@Column(name = "type", columnDefinition = "decimal (1, 0)")
-	private TransactionType type;
+	@Column(name = "operation_type", columnDefinition = "decimal (1, 0) default 1")
+	private OperationType operationType;
 
-	@Version
-	@Column(columnDefinition = "bigint default 0", nullable = false)
-	private Long version;
+	@Embedded
+	@AttributeOverrides({ 
+		@AttributeOverride(name = "id", column = @Column(name = "movement_id", nullable = false))
+		})
+	private BalanceMovement movement;
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, version);
+		return Objects.hash(accountId, id);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) {
+		if (this == obj)
 			return true;
-		}
-		if (!(obj instanceof Balance)) {
+		if (!(obj instanceof Balance))
 			return false;
-		}
 		Balance other = (Balance) obj;
-		return Objects.equals(id, other.id) && Objects.equals(version, other.version);
+		return Objects.equals(accountId, other.accountId) && Objects.equals(id, other.id);
 	}
-
 
 }

@@ -52,9 +52,23 @@ public class BalanceBuilder {
 				.accountId(request.getAccountId())
 				.userId(request.getUserId())
 				.timestamp(Instant.parse(LocalDate.now().atStartOfDay().toString() + ":00Z"))
+				.movementId(1l)
 //				.billingDay(Math.min(LocalDate.now().getDayOfMonth(), 27))
-				.billingDay(ThreadLocalRandom.current().nextInt(1, 17))
-				.billingCycle(30)
+//				.billingDay(ThreadLocalRandom.current().nextInt(1, 17))
+//				.billingCycle(30)
+				.balance(0d)
+				.build();
+	}
+	
+	public static BillingPeriod toInitialBillingPeriod(Balance initialBalance) {
+		return BillingPeriod
+				.builder()
+				.accountId(initialBalance.getAccountId())
+//				.userId(initialBalance.getUserId())
+				.userId("user" + initialBalance.getAccountId() + "@nautilus.team")
+				.timestamp(initialBalance.getTimestamp())
+				.movementId(initialBalance.getMovement().getId())
+				.transactionsCycle(100l)
 				.balance(0d)
 				.build();
 	}

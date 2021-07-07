@@ -1,9 +1,7 @@
 package team.nautilus.poc.concurrency.persistence.repository;
 
-import java.time.LocalDate;
 import java.util.List;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,7 +18,7 @@ public interface BillingPeriodRepository extends JpaRepository<BillingPeriod, Lo
 			+ "BillingPeriod b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "order by b.timestamp desc, b.movement.id ")
+			+ "order by b.timestamp desc, b.id ")
 	List<BillingPeriod> getCurrentBillingPeriodByAccountId(@Param("accountId") Long accountId, Pageable pageable);
 	
 }

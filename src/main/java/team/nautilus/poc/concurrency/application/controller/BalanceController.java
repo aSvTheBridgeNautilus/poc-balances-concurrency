@@ -48,9 +48,27 @@ public class BalanceController {
 			@NotNull(message = "account_id cannot be empty") 
 			@RequestParam(value = "account_id", required = false) 
 			Long accountId) {
-
+		
 		log.debug("[BalanceController:getBalance] started");
 		return ResponseEntity.ok(journalFacade.getBalanceFromCurrentBillingPeriodOfAccount(accountId));
+	}
+	
+	@SneakyThrows
+	@GetMapping("/balances/complete")
+	public @ResponseBody ResponseEntity<BalanceResponse> getCompleteBalance(
+			@Valid 
+			@NotNull(message = "account_id cannot be empty") 
+			@RequestParam(value = "account_id", required = false) 
+			Long accountId) {
+
+		log.debug("[BalanceController:getBalance] started");
+		return ResponseEntity.ok(
+				BalanceResponse
+				.builder()
+				.accountId(accountId)
+				.amount(repository.getCompleteBillingPeriodBalanceByAccountId(accountId))
+				.build()
+				);
 	}
 
 	@SneakyThrows

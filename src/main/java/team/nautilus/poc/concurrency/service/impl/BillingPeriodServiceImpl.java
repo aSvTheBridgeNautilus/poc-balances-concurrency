@@ -96,7 +96,10 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 									+ "Transaction count exceeded cycle limit of {} for account {}. "
 									+ "New billing period will be processed for account {}",
 							lastBillingPeriod.getTransactionsCycle(), accountId, accountId);
-					processNewBillingCycle(lastMovementOfPeriod, lastBillingPeriod.getTransactionsCycle(), lastPeriodBalance);
+					processNewBillingCycle(
+							lastMovementOfPeriod, 
+							lastBillingPeriod.getTransactionsCycle(), 
+							transactionData.getBalance());
 
 				}
 				

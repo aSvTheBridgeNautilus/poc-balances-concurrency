@@ -10,6 +10,7 @@ import java.util.List;
 import javax.persistence.EntityNotFoundException;
 
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -41,6 +42,8 @@ public class ErrorHandler {
 		ConcurrentModificationException.class,
 		BalanceInitializationException.class,
 		ProcessNewBillingCycleException.class,
+		DataIntegrityViolationException.class,
+//		ConstraintViolationException.class,
 		CreateMovementsException.class,
 		})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)

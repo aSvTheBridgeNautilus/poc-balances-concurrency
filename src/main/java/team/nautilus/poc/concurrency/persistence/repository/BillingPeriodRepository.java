@@ -20,5 +20,13 @@ public interface BillingPeriodRepository extends JpaRepository<BillingPeriod, Lo
 			+ "b.accountId = :accountId "
 			+ "order by b.timestamp desc, b.id ")
 	List<BillingPeriod> getCurrentBillingPeriodByAccountId(@Param("accountId") Long accountId, Pageable pageable);
+
+	@Query(value = "select b "
+			+ "from "
+			+ "BillingPeriod b "
+			+ "where "
+			+ "b.accountId = :accountId "
+			+ "order by b.timestamp asc, b.id ")
+	List<BillingPeriod> getAllBillingPeriodsByAccountId(@Param("accountId") Long accountId);
 	
 }

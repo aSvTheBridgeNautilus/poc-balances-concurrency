@@ -2,11 +2,10 @@ package team.nautilus.poc.concurrency.application.facade.impl;
 
 import java.security.InvalidParameterException;
 import java.time.Instant;
-import java.util.ConcurrentModificationException;
-import java.util.Objects;
 
 import javax.validation.Valid;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +24,7 @@ import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.BalanceIni
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.InsufficientFundsException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.ProcessNewBillingCycleException;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
+import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 import team.nautilus.poc.concurrency.persistence.model.constant.OperationType;
 import team.nautilus.poc.concurrency.persistence.model.embeddables.BalanceMovement;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
@@ -42,15 +42,15 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 	
 	@Override
 	@SneakyThrows
-	public Double verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired) {
+	public BillingPeriod verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired) {
 		Long accountId = lastMovement.getAccountId();
-		Double periodBalance = null;
-		if (amountRequired > (periodBalance = billingService.getCurrenBillingPeriodBalanceFromAccount(lastMovement))) {
-			log.error("[AccountJournal:verifyAccountHasSufficientFunds] Insufficient funds on account " + accountId);
+		BillingPeriod period = billingService.getCurrentBillingPeriodFromAccount(lastMovement);
+		if (amountRequired > period.getCacheBalance()) {
+			log.error("[AccountJournalFacade:verifyAccountHasSufficientFunds] Insufficient funds on account " + accountId);
 			throw new InsufficientFundsException("Insufficient funds on account " + accountId);
 		}
 
-		return periodBalance;
+		return period;
 	}
 	
 	@SneakyThrows
@@ -58,15 +58,17 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 	public BalanceResponse takeFundsFromAccount(BalanceDebitRequest request) {
 		log.debug("[AccountJournalFacade:takeFundsFromAccount] started...");
 		
+		Long accountId = request.getAccountId();
 		try {
 			
-			Balance lastMovement = journalService.getLastMovementFromAccount(request.getAccountId());
-			Long accountId = lastMovement.getAccountId();
-			verifyAccountHasSufficientFunds(lastMovement, request.getAmount());
+			Balance lastMovement = journalService.getLastMovementFromAccount(accountId);
+			// verify funds in source
+			BillingPeriod lastPeriod = verifyAccountHasSufficientFunds(lastMovement, request.getAmount());
+			
 			Balance debitMovement =  Balance.builder()
-					.accountId(lastMovement.getAccountId())
+					.accountId(accountId)
 					.amount(-request.getAmount())
-					.balance(billingService.getCurrenBillingPeriodBalanceFromAccount(lastMovement) - request.getAmount())
+					.balance(lastPeriod.getCacheBalance() - request.getAmount())
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
 					.operationType(OperationType.DEBIT)
@@ -77,19 +79,19 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 					.build();
 			
 			
-			log.info("[AccountJournal:takeFundsFromAccount] save new movement of Account {}",
+			log.info("[AccountJournalFacade:takeFundsFromAccount] save new movement of Account {}",
 					lastMovement.getAccountId());
 			
 			Balance balance = balanceRepository.save(debitMovement);
 		
-			log.info("[AccountJournal:takeFundsFromAccount] {}", balance);
+			log.info("[AccountJournalFacade:takeFundsFromAccount] {}", balance);
 			
 			return  BalanceBuilder.toResponse(balance);
 		} catch (InsufficientFundsException ex) {
-			ex.printStackTrace();
+			log.error("[AccountJournalFacade:takeFundsFromAccount] Insufficient funds on account {}", accountId);
 			throw ex;
-		} catch (ConcurrentModificationException ex) {
-			ex.printStackTrace();
+		} catch (DataIntegrityViolationException ex) {
+			log.error("[AccountJournalFacade:takeFundsFromAccount] Too many concurrent operations on account {}", accountId);
 			throw ex;
 		} catch (ProcessNewBillingCycleException ex) {
 			ex.printStackTrace();
@@ -103,14 +105,17 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 	@SneakyThrows
 	@Transactional(rollbackFor = Exception.class)
 	public BalanceResponse addFundsToAccount(BalanceCreditRequest request) {
+		log.debug("[AccountJournalFacade:addFundsToAccount] started...");
+		
+		Long accountId = request.getAccountId();
+		
 		try {
-			
-			Balance lastMovement = journalService.getLastMovementFromAccount(request.getAccountId());
-			Long accountId = lastMovement.getAccountId();
+			Balance lastMovement = journalService.getLastMovementFromAccount(accountId);
+			BillingPeriod lastPeriod = billingService.getCurrentBillingPeriodFromAccount(lastMovement);
 			Balance creditMovement =  Balance.builder()
-					.accountId(lastMovement.getAccountId())
+					.accountId(accountId)
 					.amount(request.getAmount())
-					.balance(billingService.getCurrenBillingPeriodBalanceFromAccount(lastMovement) + request.getAmount())
+					.balance(lastPeriod.getCacheBalance())
 					.accountId(lastMovement.getAccountId())
 					.timestamp(Instant.now())
 					.operationType(OperationType.CREDIT)
@@ -121,14 +126,17 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 					.build();
 
 			
-			log.info("[AccountJournal:addFundsToAccount] save new movement of Account {}",
+			log.info("[AccountJournalFacade:addFundsToAccount] save new movement of Account {}",
 					lastMovement.getAccountId());
 			
 			Balance balance = balanceRepository.save(creditMovement);
 
-			log.info("[AccountJournal:addFundsToAccount]: {}", balance);
+			log.info("[AccountJournalFacade:addFundsToAccount]: {}", balance);
 			
-			return  BalanceBuilder.toResponse(balance);
+			return BalanceBuilder.toResponse(balance);
+		} catch (DataIntegrityViolationException ex) {
+			log.error("[AccountJournalFacade:addFundsToAccount] Too many concurrent operations on account {}", accountId);
+			throw ex;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new InvalidParameterException(
@@ -158,7 +166,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 			 * implement from here down
 			 */
 			billingService.createFirstBillingPeriodForAccount(request);
-			log.info("[AccountJournal:initializeBalance] First billing period of account {} initialized", request.getAccountId());
+			log.info("[AccountJournalFacade:initializeBalance] First billing period of account {} initialized", request.getAccountId());
 			return BalanceResponse
 						.builder()
 					    .accountId(request.getAccountId())
@@ -166,7 +174,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 						.build();
 			
 		} catch (BalanceInitializationException ex) {
-			log.error("[AccountJournal:initializeBalance] account {} already initialized", request.getAccountId());
+			log.error("[AccountJournalFacade:initializeBalance] account {} already initialized", request.getAccountId());
 			throw ex;
 		} catch (RuntimeException ex) {
 			throw new BalanceInitializationException("Initialization request invalid for account " + request.getAccountId());
@@ -176,13 +184,13 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 	@Override
 	@SneakyThrows
 	public BalanceResponse getBalanceFromCurrentBillingPeriodOfAccount(Long accountId) {
-		log.info("[AccountJournal:getBalanceFromCurrentBillingPeriodOfAccount] Calculating balance of current Billing Period for account{}", accountId);
+		log.info("[AccountJournalFacade:getBalanceFromCurrentBillingPeriodOfAccount] Calculating balance of current Billing Period for account{}", accountId);
 		
 		// get last movement form account
 		Balance latestMovement = journalService.getLastMovementFromAccount(accountId);
 		return BalanceBuilder.toCurrentBillingPeriodBalanceResponse(
 						latestMovement,
-						billingService.getCurrenBillingPeriodBalanceFromAccount(latestMovement));
+						billingService.getCurrentBillingPeriodFromAccount(latestMovement).getCacheBalance());
 	}
 
 	@Override
@@ -190,7 +198,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 		log.debug("[AccountJournalFacade:registerTransfer] started");
 		Balance sourceAccount = journalService.getLastMovementFromAccount(request.getSourceAccountId());
 		
-		Double sourcePeriodBalance = verifyAccountHasSufficientFunds(sourceAccount, request.getAmount());
+		BillingPeriod sourcePeriodBalance = verifyAccountHasSufficientFunds(sourceAccount, request.getAmount());
 		
 		Balance targetAccount = journalService.getLastMovementFromAccount(request.getTargetAccountId());
 
@@ -198,13 +206,13 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 
 		Balance sourceMov = BalanceBuilder.toNewMovement(
 				sourceAccount, 
-				sourcePeriodBalance, 
+				sourcePeriodBalance.getCacheBalance(), 
 				journalService.generateNewMovementIdForAccount(sourceAccount.getAccountId()), 
 				request, 
 				timestamp, OperationType.DEBIT);
 		Balance targetMov = BalanceBuilder.toNewMovement(
 				targetAccount, 
-				billingService.getCurrenBillingPeriodBalanceFromAccount(targetAccount),
+				billingService.getCurrentBillingPeriodFromAccount(targetAccount).getCacheBalance(),
 				journalService.generateNewMovementIdForAccount(targetAccount.getAccountId()), 
 				request, 
 				timestamp, OperationType.CREDIT);

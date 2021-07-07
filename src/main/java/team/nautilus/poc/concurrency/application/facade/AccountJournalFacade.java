@@ -11,6 +11,7 @@ import team.nautilus.poc.concurrency.application.dto.request.BalanceTransferRequ
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.application.dto.response.TransferResponse;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
+import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 
 @Component
 public interface AccountJournalFacade {
@@ -19,7 +20,7 @@ public interface AccountJournalFacade {
 
 	BalanceResponse getBalanceFromCurrentBillingPeriodOfAccount(Long accountId);
 
-	Double verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired);
+	BillingPeriod verifyAccountHasSufficientFunds(Balance lastMovement, Double amountRequired);
 
 	BalanceResponse addFundsToAccount(@Valid BalanceCreditRequest creditRequest);
 

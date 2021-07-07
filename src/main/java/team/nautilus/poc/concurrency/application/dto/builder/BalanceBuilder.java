@@ -70,7 +70,7 @@ public class BalanceBuilder {
 //				.userId(initialBalance.getUserId())
 				.userId("user" + initialBalance.getAccountId() + "@nautilus.team")
 				.timestamp(initialBalance.getTimestamp())
-				.movementId(initialBalance.getMovement().getId())
+				.movementId(initialBalance.getId())
 				.transactionsCycle(100l)
 				.balance(0d)
 				.build();

@@ -1,5 +1,10 @@
 package team.nautilus.poc.concurrency.application.controller;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityNotFoundException;
@@ -26,10 +31,14 @@ import team.nautilus.poc.concurrency.application.dto.request.BalanceDebitRequest
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceTransferRequest;
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
+import team.nautilus.poc.concurrency.application.dto.response.BillingPeriodPOCResponse;
+import team.nautilus.poc.concurrency.application.dto.response.BillingPeriodReportResponse;
 import team.nautilus.poc.concurrency.application.dto.response.TransferResponse;
 import team.nautilus.poc.concurrency.application.facade.AccountJournalFacade;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
+import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
+import team.nautilus.poc.concurrency.persistence.repository.BillingPeriodRepository;
 
 @Slf4j
 @Validated
@@ -38,9 +47,80 @@ import team.nautilus.poc.concurrency.persistence.repository.BalanceRepository;
 @RequestMapping("/poc/concurrency/billing_period")
 public class BalanceController {
 
+	private final BillingPeriodRepository billingRepository;
 	private final BalanceRepository repository;
 	private final AccountJournalFacade journalFacade;
 
+	@SneakyThrows
+	@GetMapping("/balances/billing_report")
+	public @ResponseBody ResponseEntity<BillingPeriodReportResponse> getBillingReport(
+			@Valid 
+			@NotNull(message = "account_id cannot be empty") 
+			@RequestParam(value = "account_id", required = false) 
+			Long accountId) {
+		
+		log.debug("[BalanceController:getBalance] started");
+		
+		
+		List<BillingPeriodPOCResponse> periodsReport = new ArrayList<>();
+		
+		List<BillingPeriod> periods = billingRepository.getAllBillingPeriodsByAccountId(accountId);
+		
+		int index = 0;
+		Instant fromMIN = LocalDate.of(2020, Month.JANUARY, 1).atStartOfDay().atOffset(ZoneOffset.UTC).toInstant(); 
+		for(BillingPeriod period : periods) {
+			List<Object[]> sumAndCount = (List<Object[]>) 
+					repository.getBillingPeriodBalanceByAccountId(
+					accountId, 
+					index == 0 
+					? fromMIN 
+					: periods.get(index - 1).getTimestamp(), 
+					period.getTimestamp(),
+					index == 0 
+					? -1
+					: periods.get(index - 1).getMovementId(),
+					period.getMovementId());
+			
+					Double sum = null;
+					Long count = null;
+					Double realBalance = repository.getBalanceUntilBillingPeriod(accountId, period.getTimestamp(), period.getMovementId());
+					Double diff = null;
+					
+			try {
+				count = ((Number)sumAndCount.get(0)[1]).longValue();
+				
+				sum = count == 0l ? 0d : ((Number)sumAndCount.get(0)[0]).doubleValue();
+				
+				diff = realBalance - sum;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			BillingPeriodPOCResponse response =
+					BillingPeriodPOCResponse
+					.builder()
+					.accountId(accountId)
+					.fromTimestamp(index == 0 ? null : periods.get(index - 1).getTimestamp())
+					.fromId(accountId)
+					.toTimestamp(period.getTimestamp())
+					.toId(period.getMovementId())
+					.periodBalance(period.getBalance())
+					.realBalance(realBalance)
+					.count(count)
+					.sum(sum)
+					.difference(diff)
+					.build();
+			
+			periodsReport.add(response);
+			index++;
+		}
+		
+		return ResponseEntity.ok(BillingPeriodReportResponse
+										.builder()
+										.periods(periodsReport)
+										.build());
+	}
+	
 	@SneakyThrows
 	@GetMapping("/balances")
 	public @ResponseBody ResponseEntity<BalanceResponse> getBalance(

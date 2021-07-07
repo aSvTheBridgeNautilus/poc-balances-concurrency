@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
-import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +35,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	@Override
 	@SneakyThrows
 	@Transactional(rollbackFor = RuntimeException.class)
-	public void processNewBillingCycle(Balance lastMovementOfPeriod, Long transactionCycle, Double currentBalance) {
+	public BillingPeriod processNewBillingCycle(Balance lastMovementOfPeriod, Long transactionCycle, Double currentBalance) {
 		log.debug("[BillingPeriodServiceImpl:processNewBillingCycle] Started for account {}",
 				lastMovementOfPeriod.getAccountId());
 		try {
@@ -44,13 +44,13 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 					.accountId(lastMovementOfPeriod.getAccountId())
 					.userId("user" + lastMovementOfPeriod.getAccountId() + "@nautilus.team")
 					.timestamp(lastMovementOfPeriod.getTimestamp()) 
-					.movementId(lastMovementOfPeriod.getMovement().getId())
+					.movementId(lastMovementOfPeriod.getId())
 					.transactionsCycle(transactionCycle)
 					.balance(currentBalance)
 					.build();
 
-			billingRepository.save(newPeriod);
-		} catch (ConstraintViolationException e) {
+			return billingRepository.saveAndFlush(newPeriod);
+		} catch (DataIntegrityViolationException e) {
 			log.error("[BillingPeriodServiceImpl:processNewBillingCycle] "
 					+ "Billing cycle already registered for account {}",
 					lastMovementOfPeriod.getAccountId());
@@ -65,18 +65,24 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 					"Error proccesing new billing cycle for account " + lastMovementOfPeriod.getAccountId());
 		}
 	}
-
+	
 	@Override
 	@SneakyThrows
-	public Double getCurrenBillingPeriodBalanceFromAccount(Balance lastMovementOfPeriod) {
+	public BillingPeriod getCurrentBillingPeriodFromAccount(Balance lastMovementOfPeriod) {
 		Long accountId = lastMovementOfPeriod.getAccountId();
 		log.debug("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] Started for account {}",
 				accountId);
 
-		Boolean tryOnce = false;
+		Boolean tryAgain = false;
+		int count = 0;
 
 		do {
-			BillingPeriod lastBillingPeriod = getCurrentBillingPeriodFromAccount(accountId);
+			if(count > 0) {
+				log.info("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
+						+ "Possible excessive of concurrent operations on account {}. Operation will be proccesed once more.",
+						accountId);
+			}
+			BillingPeriod lastBillingPeriod = getLastBillingPeriodFromAccountIfNotFoundCreateInitial(accountId);
 			Instant lastMovementTimestampOfPeriod = lastBillingPeriod.getTimestamp();
 			Long lastMovementIdOfPeriod = lastBillingPeriod.getMovementId();
 			Double lastPeriodBalance = lastBillingPeriod.getBalance();
@@ -88,6 +94,15 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 							accountId,
 							lastMovementIdOfPeriod, 
 							lastMovementTimestampOfPeriod);
+			
+			/*
+			 * This would be the must
+			 * updated balance calculated
+			 * during this process but
+			 * still not saved in a billing
+			 * period.
+			 */
+			Double cacheBalance = lastPeriodBalance + transactionData.getBalance();
 		
 			try {
 				if (transactionData.getCount() >= lastBillingPeriod.getTransactionsCycle()) {
@@ -96,21 +111,25 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 									+ "Transaction count exceeded cycle limit of {} for account {}. "
 									+ "New billing period will be processed for account {}",
 							lastBillingPeriod.getTransactionsCycle(), accountId, accountId);
-					processNewBillingCycle(
-							lastMovementOfPeriod, 
+					lastBillingPeriod = processNewBillingCycle(
+							lastMovementOfPeriod,
 							lastBillingPeriod.getTransactionsCycle(), 
-							transactionData.getBalance());
+							cacheBalance);
 
 				}
 				
-				return lastPeriodBalance + transactionData.getBalance();
-			} catch (ConstraintViolationException e) {
+				lastBillingPeriod.setCacheBalance(cacheBalance);
+				
+//				return lastPeriodBalance + transactionData.getBalance();
+				return lastBillingPeriod;
+			} catch (DataIntegrityViolationException e) {
 				log.info("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
 						+ "Possible collision of account {} billing period. Operation will be proccesed one more time.",
 						accountId);
-				tryOnce = true;
+				tryAgain = true;
+				count++;
 			} 
-		} while (tryOnce);
+		} while (tryAgain && count < 3);
 		
 		log.error("Account {} balance is being modified by more than two users at the same time", lastMovementOfPeriod.getAccountId());
 		throw new ConcurrentModificationException("Account " + lastMovementOfPeriod.getAccountId() + " balance is "
@@ -132,7 +151,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	@Override
 	@SneakyThrows
 	@Transactional(rollbackFor = RuntimeException.class)
-	public BillingPeriod getCurrentBillingPeriodFromAccount(Long accountId) {
+	public BillingPeriod getLastBillingPeriodFromAccountIfNotFoundCreateInitial(Long accountId) {
 		List<BillingPeriod> result = billingRepository.getCurrentBillingPeriodByAccountId(accountId,
 				PageRequest.of(0, 1));
 
@@ -144,10 +163,11 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 					accountId);
 			Balance initialBalance = balanceRepository.getInitialBalanceFromAccount(accountId, PageRequest.of(0, 1))
 					.get(0);
-			return billingRepository.save(BalanceBuilder.toInitialBillingPeriod(initialBalance));
+			return billingRepository.saveAndFlush(BalanceBuilder.toInitialBillingPeriod(initialBalance));
 		}
 
 		return result.get(0);
 	}
+
 
 }

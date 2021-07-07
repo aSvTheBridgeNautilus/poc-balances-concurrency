@@ -49,7 +49,7 @@ public class BillingPeriod implements Serializable {
 	@Column(name = "timestamp_utc", columnDefinition = "timestamp")
 	@Convert(converter = Instant2TimestampConverter.class)
 	private Instant timestamp;
-	
+
 	@Id
 	@JsonProperty("movement_id")
 	@Column(name = "movement_id")
@@ -75,5 +75,6 @@ public class BillingPeriod implements Serializable {
 	@Column(name = "balance", columnDefinition = "decimal(11, 2) default 0", nullable = false)
 	private Double balance;
 
+	transient private Double cacheBalance;
 
 }

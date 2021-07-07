@@ -37,8 +37,8 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "and b.movement.id > :movementId "
-			+ "and b.timestamp >= :from ")
+			+ "and b.id > :movementId "
+			+ "and b.timestamp > :from ")
 	Double getCurrentBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId, @Param("movementId") Long movementId, @Param("from") Instant billingPeriodDate);
 
 	@Query(value = "select sum(b.amount) "
@@ -46,10 +46,28 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "and b.timestamp >= :from "
-			+ "and b.timestamp < :to "
+			+ "and b.timestamp <= :timestamp "
+			+ "and b.id <= :movementId ")
+	Double getBalanceUntilBillingPeriod(@Param("accountId") Long accountId, @Param("timestamp") Instant timestamp, @Param("movementId") Long movementId);
+
+	@Query(value = "select "
+			+ "sum(b.amount), "
+			+ "count(b.id) "
+			+ "from "
+			+ "Balance b "
+			+ "where "
+			+ "b.accountId = :accountId "
+			+ "and b.timestamp > :fromTimestamp "
+			+ "and b.id > :fromId "
+			+ "and b.timestamp <= :toTimestamp "
+			+ "and b.id <= :toId "
 			+ "")
-	Double getBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId, @Param("from") Instant from, @Param("to") Instant to);
+	List<Object[]> getBillingPeriodBalanceByAccountId(
+			@Param("accountId") Long accountId,
+			@Param("fromTimestamp") Instant fromTimestamp, 
+			@Param("toTimestamp") Instant toTimestamp,
+			@Param("fromId") Long fromId, 
+			@Param("toId") Long toId);
 
 	@Query(value = "select "
 			+ "sum(b.amount), "
@@ -58,8 +76,8 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "and b.timestamp >= :from "
-			+ "and b.movement.id >= :movementId "
+			+ "and b.timestamp > :from "
+			+ "and b.id > :movementId "
 			+ "")
 	List<Object[]> getBillingPeriodBalanceTransactionsCountByAccountId(@Param("accountId") Long accountId, @Param("movementId") Long movementId, @Param("from") Instant from);
 

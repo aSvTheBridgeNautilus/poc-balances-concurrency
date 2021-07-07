@@ -1,8 +1,8 @@
 package team.nautilus.poc.concurrency.service;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
+
+import org.springframework.transaction.annotation.Transactional;
 
 import team.nautilus.poc.concurrency.application.dto.BillingPeriodTransactionData;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
@@ -11,15 +11,19 @@ import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 
 public interface BillingPeriodService {
 
-	BillingPeriod getCurrentBillingPeriodFromAccount(Long accountId);
+//	BillingPeriod getCurrentBillingPeriodFromAccount(Long accountId);
 
 	void createFirstBillingPeriodForAccount(BalanceInitializationRequest request);
 
-	Double getCurrenBillingPeriodBalanceFromAccount(Balance lastMovementOfPeriod);
+//	Double getCurrenBillingPeriodBalanceFromAccount(Balance lastMovementOfPeriod);
 
-	void processNewBillingCycle(Balance lastMovementOfPeriod, Long transactionCycle, Double currentBalance);
+	BillingPeriod processNewBillingCycle(Balance lastMovementOfPeriod, Long transactionCycle, Double currentBalance);
 
 	BillingPeriodTransactionData getBillingPeriodTransactionsData(Long accountId, Long lastMovementIdOfPeriod,
 			Instant lastMovementTimestampOfPeriod);
+
+	BillingPeriod getLastBillingPeriodFromAccountIfNotFoundCreateInitial(Long accountId);
+
+	BillingPeriod getCurrentBillingPeriodFromAccount(Balance lastMovementOfPeriod);
 
 }

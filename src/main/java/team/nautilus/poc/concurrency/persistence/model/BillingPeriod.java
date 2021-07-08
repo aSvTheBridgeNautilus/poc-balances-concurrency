@@ -8,6 +8,7 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
+import javax.persistence.Index;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,7 +26,10 @@ import team.nautilus.poc.concurrency.persistence.model.converter.Instant2Timesta
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "BillingPeriod")
+@Table(name = "BillingPeriod", indexes = {
+		@Index(name = "account_idx", columnList = "account_id"),
+		@Index(name = "account_movement_idx", columnList = "account_id, movement_id"),
+})
 @IdClass(BillingPeriod.class)
 public class BillingPeriod implements Serializable {
 

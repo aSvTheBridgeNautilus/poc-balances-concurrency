@@ -3,10 +3,10 @@ package team.nautilus.poc.concurrency.service.impl;
 import java.time.Instant;
 import java.util.ConcurrentModificationException;
 import java.util.List;
-import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +17,7 @@ import team.nautilus.poc.concurrency.application.dto.BillingPeriodTransactionDat
 import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
 import team.nautilus.poc.concurrency.application.mapper.dto.BillingPeriodTransactionDataMapper;
+import team.nautilus.poc.concurrency.infrastructure.config.BillingPeriodAsyncConfiguration;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.BillingPeriodOutdatedException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.ProcessNewBillingCycleException;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
@@ -34,49 +35,63 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	private final BalanceRepository balanceRepository;
 	private final BillingPeriodTransactionDataMapper transactionDataMapper;
 	
+	@Async(BillingPeriodAsyncConfiguration.BILLING_PERIOD_TASK_EXECUTOR)
 	@Override
 	@SneakyThrows
 	@Transactional(rollbackFor = RuntimeException.class)
-	public BillingPeriod processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastPeriod, Double currentBalance) {
-		Long accountId = lastMovementOfPeriod.getAccountId();
-		log.debug("[BillingPeriodServiceImpl:processNewBillingCycle] Started for account {}",
-				accountId);
-		try {
-			BillingPeriod newPeriod = BillingPeriod
-					.builder()
-					.accountId(accountId)
-					.userId("user" + accountId + "@nautilus.team")
-					.timestamp(lastMovementOfPeriod.getTimestamp()) 
-					.movementId(lastMovementOfPeriod.getId())
-					.transactionsCycle(lastPeriod.getTransactionsCycle())
-					.balance(currentBalance)
-					.build();
-			/*
-			 * Before create a new billing cycle,
-			 * let's make sure the transaction 
-			 * cycle on the current period has
-			 * been exhausted.
-			 */
-			verifyTransactionCycleIsExhaustedFor(lastPeriod);
+	public CompletableFuture<BillingPeriod> processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastPeriod, Double currentBalance) {
+		CompletableFuture<BillingPeriod> futurePeriod = new CompletableFuture<>();
+		return futurePeriod.completeAsync(() -> {
+			final long start = System.currentTimeMillis();
+			Long accountId = lastMovementOfPeriod.getAccountId();
 
-			return billingRepository.saveAndFlush(newPeriod);
-		} catch (BillingPeriodOutdatedException e) {
-			log.error(e.getMessage());
-			throw e;
-//		} catch (DataIntegrityViolationException e) {
-//			log.error("[BillingPeriodServiceImpl:processNewBillingCycle] "
-//					+ "Billing cycle already registered for account {}",
-//					lastMovementOfPeriod.getAccountId());
-//			throw e;
-		} catch (RuntimeException e) {
-			log.error(
-					"[BillingPeriodServiceImpl:processNewBillingCycle] "
-					+ "Error proccesing new billing cycle for account {}: {}",
-					lastMovementOfPeriod.getAccountId(), e.getMessage());
-			e.printStackTrace();
-			throw new ProcessNewBillingCycleException(
-					"Error proccesing new billing cycle for account " + lastMovementOfPeriod.getAccountId());
-		}
+			log.debug("[BillingPeriodServiceImpl:processNewBillingCycle] Started for account {} on Thread {}",
+					accountId, Thread.currentThread().getName());
+			try {
+				BillingPeriod newPeriod = BillingPeriod
+						.builder()
+						.accountId(accountId)
+						.userId("user" + accountId + "@nautilus.team")
+						.timestamp(lastMovementOfPeriod.getTimestamp()) 
+						.movementId(lastMovementOfPeriod.getId())
+						.transactionsCycle(lastPeriod.getTransactionsCycle())
+						.balance(currentBalance)
+						.build();
+				/*
+				 * Before create a new billing cycle,
+				 * let's make sure the transaction 
+				 * cycle on the current period has
+				 * been exhausted.
+				 */
+				verifyTransactionCycleIsExhaustedFor(lastPeriod);
+
+				return billingRepository.saveAndFlush(newPeriod);
+			} catch (BillingPeriodOutdatedException e) {
+				log.error(e.getMessage());
+				throw e;
+			} catch (RuntimeException e) {
+				log.error(
+						"[BillingPeriodServiceImpl:processNewBillingCycle] "
+						+ "Error proccesing new billing cycle for account {}: {}",
+						lastMovementOfPeriod.getAccountId(), e.getMessage());
+				e.printStackTrace();
+				throw new ProcessNewBillingCycleException(
+						"Error proccesing new billing cycle for account " + lastMovementOfPeriod.getAccountId());
+			} finally {
+				log.info("[BillingPeriodServiceImpl:processNewBillingCycle] Elapsed time to procces new billing period: {}",
+						(System.currentTimeMillis() - start));
+			}
+		}).whenComplete((newPeriod, ex) -> {
+			if (ex != null) {
+				log.error(ex.getMessage());
+				return;
+			}
+			
+			log.info("[BillingPeriodServiceImpl:processNewBillingCycle] "
+					+ "New Billing period for account {}, "
+					+ "succesfully proccesed",
+					newPeriod.getAccountId());
+		});
 	}
 	
 	@Override
@@ -146,16 +161,15 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 								+ "Transaction count exceeded cycle limit of {} for account {}. "
 								+ "New billing period will be processed for account {}",
 						lastBillingPeriod.getTransactionsCycle(), accountId, accountId);
-				lastBillingPeriod = processNewBillingCycle(lastMovementOfPeriod, lastBillingPeriod, cacheBalance);
-
+				processNewBillingCycle(lastMovementOfPeriod, lastBillingPeriod, cacheBalance);
 			}
 		} catch (BillingPeriodOutdatedException e) {
-			log.info(e.getMessage());
+			log.error(e.getMessage());
 		} catch (RuntimeException e) {
 			log.error("Account {} balance is being modified by more than two users at the same time", lastMovementOfPeriod.getAccountId());
 			e.printStackTrace();
-			throw new ConcurrentModificationException("Account " + lastMovementOfPeriod.getAccountId() + " balance is "
-					+ "being modified by more than two users at the same time");
+//			throw new ConcurrentModificationException("Account " + lastMovementOfPeriod.getAccountId() + " balance is "
+//					+ "being modified by more than two users at the same time");
 			
 		}
 

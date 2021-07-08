@@ -3,6 +3,7 @@ package team.nautilus.poc.concurrency.service.impl;
 import java.time.Instant;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +17,7 @@ import team.nautilus.poc.concurrency.application.dto.BillingPeriodTransactionDat
 import team.nautilus.poc.concurrency.application.dto.builder.BalanceBuilder;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
 import team.nautilus.poc.concurrency.application.mapper.dto.BillingPeriodTransactionDataMapper;
+import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.BillingPeriodOutdatedException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.ProcessNewBillingCycleException;
 import team.nautilus.poc.concurrency.persistence.model.Balance;
 import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
@@ -35,21 +37,34 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	@Override
 	@SneakyThrows
 	@Transactional(rollbackFor = RuntimeException.class)
-	public BillingPeriod processNewBillingCycle(Balance lastMovementOfPeriod, Long transactionCycle, Double currentBalance) {
+	public BillingPeriod processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastPeriod, Double currentBalance) {
+		Long accountId = lastMovementOfPeriod.getAccountId();
 		log.debug("[BillingPeriodServiceImpl:processNewBillingCycle] Started for account {}",
-				lastMovementOfPeriod.getAccountId());
+				accountId);
 		try {
 			BillingPeriod newPeriod = BillingPeriod
 					.builder()
-					.accountId(lastMovementOfPeriod.getAccountId())
-					.userId("user" + lastMovementOfPeriod.getAccountId() + "@nautilus.team")
+					.accountId(accountId)
+					.userId("user" + accountId + "@nautilus.team")
 					.timestamp(lastMovementOfPeriod.getTimestamp()) 
 					.movementId(lastMovementOfPeriod.getId())
-					.transactionsCycle(transactionCycle)
+					.transactionsCycle(lastPeriod.getTransactionsCycle())
 					.balance(currentBalance)
 					.build();
+			
+			/**
+			 * Last check to verify
+			 * another billing period 
+			 * hasn't been inserted 
+			 * during the creation 
+			 * of this billing period
+			 */
+			verifyBillingPeriodIsNotOutdated(lastPeriod);
 
 			return billingRepository.saveAndFlush(newPeriod);
+		} catch (BillingPeriodOutdatedException e) {
+			log.error(e.getMessage());
+			throw e;
 		} catch (DataIntegrityViolationException e) {
 			log.error("[BillingPeriodServiceImpl:processNewBillingCycle] "
 					+ "Billing cycle already registered for account {}",
@@ -68,11 +83,39 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	
 	@Override
 	@SneakyThrows
+	public void verifyBillingPeriodIsNotOutdated(BillingPeriod period) {
+//		if (newPeriod.getMovementId() <= getLatestMovementIdFromAccountBillingPeriods(newPeriod.getAccountId())) {
+//			log.error("Billing period of account {} appears to be outdated. Operation aborted", newPeriod.getAccountId());
+//			throw new BillingPeriodOutdatedException("Billing period of account " + newPeriod.getAccountId()
+//			+ " appears to be outdated. Operation aborted");
+//		}
+		if (period.getTransactionsCycle() < getTotalTransactionsFromBillingPeriod(period)) {
+			log.error("Billing period of account {} appears to be outdated. Operation aborted", period.getAccountId());
+			throw new BillingPeriodOutdatedException("Billing period of account " + period.getAccountId()
+					+ " appears to be outdated. Operation aborted");
+		}
+	}
+
+	@Override
+	@SneakyThrows
+	public Long getLatestMovementIdFromAccountBillingPeriods(Long accountId) {
+		return billingRepository.getLatestMovementIdFromAccountBillingPeriodsByAccountId(accountId);
+	}
+
+	@Override
+	@SneakyThrows
+	public Long getTotalTransactionsFromBillingPeriod(BillingPeriod period) {
+		return balanceRepository.countTransactionOnCurrentBillingPeriodByAccountId(period.getAccountId(), period.getMovementId());
+	}
+	
+	@Override
+	@SneakyThrows
 	public BillingPeriod getCurrentBillingPeriodFromAccount(Balance lastMovementOfPeriod) {
 		Long accountId = lastMovementOfPeriod.getAccountId();
 		log.debug("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] Started for account {}",
 				accountId);
 
+		Long currentMovementId = null;
 		Boolean tryAgain = false;
 		int count = 0;
 
@@ -83,6 +126,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 						accountId);
 			}
 			BillingPeriod lastBillingPeriod = getLastBillingPeriodFromAccountIfNotFoundCreateInitial(accountId);
+			
 			Instant lastMovementTimestampOfPeriod = lastBillingPeriod.getTimestamp();
 			Long lastMovementIdOfPeriod = lastBillingPeriod.getMovementId();
 			Double lastPeriodBalance = lastBillingPeriod.getBalance();
@@ -96,11 +140,11 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 							lastMovementTimestampOfPeriod);
 			
 			/*
-			 * This would be the must
+			 * This would be the latest
 			 * updated balance calculated
 			 * during this process but
 			 * still not saved in a billing
-			 * period.
+			 * period on DB.
 			 */
 			Double cacheBalance = lastPeriodBalance + transactionData.getBalance();
 		
@@ -113,7 +157,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 							lastBillingPeriod.getTransactionsCycle(), accountId, accountId);
 					lastBillingPeriod = processNewBillingCycle(
 							lastMovementOfPeriod,
-							lastBillingPeriod.getTransactionsCycle(), 
+							lastBillingPeriod, 
 							cacheBalance);
 
 				}
@@ -122,10 +166,18 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 				
 //				return lastPeriodBalance + transactionData.getBalance();
 				return lastBillingPeriod;
-			} catch (DataIntegrityViolationException e) {
+			} catch (BillingPeriodOutdatedException e) {
 				log.info("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
 						+ "Possible collision of account {} billing period. Operation will be proccesed one more time.",
 						accountId);
+				e.printStackTrace();
+				tryAgain = true;
+				count++;
+			} catch (RuntimeException e) {
+				log.info("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
+						+ "Possible collision of account {} billing period. Operation will be proccesed one more time.",
+						accountId);
+				e.printStackTrace();
 				tryAgain = true;
 				count++;
 			} 
@@ -139,7 +191,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	@Override
 	public BillingPeriodTransactionData getBillingPeriodTransactionsData(Long accountId, Long lastMovementIdOfPeriod,
 			Instant lastMovementTimestampOfPeriod) {
-		return transactionDataMapper.toDTO(balanceRepository.getBillingPeriodBalanceTransactionsCountByAccountId(
+		return transactionDataMapper.toDTO(balanceRepository.sumAmountCountTransactionFromBillingPeriodByAccountId(
 				accountId, 
 				lastMovementIdOfPeriod
 //				lastMovementTimestampOfPeriod

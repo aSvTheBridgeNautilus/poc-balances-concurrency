@@ -13,13 +13,20 @@ import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 @Repository
 public interface BillingPeriodRepository extends JpaRepository<BillingPeriod, Long> {
 	
+	@Query(value = "select max(b.movementId) "
+			+ "from "
+			+ "BillingPeriod b "
+			+ "where "
+			+ "b.accountId = :accountId ")
+	Long getLatestMovementIdFromAccountBillingPeriodsByAccountId(@Param("accountId") Long accountId);
+	
 	@Query(value = "select b "
 			+ "from "
 			+ "BillingPeriod b "
 			+ "where "
 			+ "b.accountId = :accountId "
 //			+ "order by b.timestamp desc, b.id ")
-			+ "order by b.id desc ")
++ "order by b.id desc ")
 	List<BillingPeriod> getCurrentBillingPeriodByAccountId(@Param("accountId") Long accountId, Pageable pageable);
 
 	@Query(value = "select b "
@@ -28,7 +35,7 @@ public interface BillingPeriodRepository extends JpaRepository<BillingPeriod, Lo
 			+ "where "
 			+ "b.accountId = :accountId "
 //			+ "order by b.timestamp asc, b.id ")
-			+ "order by b.id asc ")
+			+ "order by b.movementId asc ")
 	List<BillingPeriod> getAllBillingPeriodsByAccountId(@Param("accountId") Long accountId);
 	
 }

@@ -100,9 +100,27 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "b.accountId = :accountId "
 			+ "and b.id > :movementId "
 			+ "")
-	Long countTransactionOnCurrentBillingPeriodByAccountId(
+	Long countTransactionsFromBillingPeriodByAccountId(
 			@Param("accountId") Long accountId, 
 			@Param("movementId") Long movementId
+			);
+	
+	@Query(value = "select "
+			+ "count(b.accountId) "
+			+ "from "
+			+ "Balance b "
+			+ "where "
+			+ "b.accountId = :accountId "
+			+ "and b.id > ("
+			+ "select max(p.movementId) "
+			+ "from "
+			+ "BillingPeriod p "
+			+ "where "
+			+ "p.accountId = :accountId "
+			+ ") "
+			+ "")
+	Long countTransactionsFromCurrentBillingPeriodByAccountId(
+			@Param("accountId") Long accountId
 			);
 
 	@Query(value = "select b "

@@ -28,8 +28,10 @@ public interface BillingPeriodService {
 
 	Long getLatestMovementIdFromAccountBillingPeriods(Long accountId);
 
-	void verifyBillingPeriodIsNotOutdated(BillingPeriod period);
+	void verifyTransactionCycleIsExhaustedFor(BillingPeriod period);
 
 	Long getTotalTransactionsFromBillingPeriod(BillingPeriod period);
+
+	Long getTotalTransactionsFromCurrentBillingPeriod(Long accountId);
 
 }

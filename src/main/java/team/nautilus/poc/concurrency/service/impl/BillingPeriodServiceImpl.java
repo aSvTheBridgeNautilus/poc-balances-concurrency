@@ -51,25 +51,23 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 					.transactionsCycle(lastPeriod.getTransactionsCycle())
 					.balance(currentBalance)
 					.build();
-			
-			/**
-			 * Last check to verify
-			 * another billing period 
-			 * hasn't been inserted 
-			 * during the creation 
-			 * of this billing period
+			/*
+			 * Before create a new billing cycle,
+			 * let's make sure the transaction 
+			 * cycle on the current period has
+			 * been exhausted.
 			 */
-			verifyBillingPeriodIsNotOutdated(lastPeriod);
+			verifyTransactionCycleIsExhaustedFor(lastPeriod);
 
 			return billingRepository.saveAndFlush(newPeriod);
 		} catch (BillingPeriodOutdatedException e) {
 			log.error(e.getMessage());
 			throw e;
-		} catch (DataIntegrityViolationException e) {
-			log.error("[BillingPeriodServiceImpl:processNewBillingCycle] "
-					+ "Billing cycle already registered for account {}",
-					lastMovementOfPeriod.getAccountId());
-			throw e;
+//		} catch (DataIntegrityViolationException e) {
+//			log.error("[BillingPeriodServiceImpl:processNewBillingCycle] "
+//					+ "Billing cycle already registered for account {}",
+//					lastMovementOfPeriod.getAccountId());
+//			throw e;
 		} catch (RuntimeException e) {
 			log.error(
 					"[BillingPeriodServiceImpl:processNewBillingCycle] "
@@ -83,16 +81,15 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	
 	@Override
 	@SneakyThrows
-	public void verifyBillingPeriodIsNotOutdated(BillingPeriod period) {
-//		if (newPeriod.getMovementId() <= getLatestMovementIdFromAccountBillingPeriods(newPeriod.getAccountId())) {
-//			log.error("Billing period of account {} appears to be outdated. Operation aborted", newPeriod.getAccountId());
-//			throw new BillingPeriodOutdatedException("Billing period of account " + newPeriod.getAccountId()
-//			+ " appears to be outdated. Operation aborted");
-//		}
-		if (period.getTransactionsCycle() < getTotalTransactionsFromBillingPeriod(period)) {
-			log.error("Billing period of account {} appears to be outdated. Operation aborted", period.getAccountId());
-			throw new BillingPeriodOutdatedException("Billing period of account " + period.getAccountId()
-					+ " appears to be outdated. Operation aborted");
+	public void verifyTransactionCycleIsExhaustedFor(BillingPeriod currentPeriod) {
+		if (getTotalTransactionsFromCurrentBillingPeriod(currentPeriod.getAccountId()) < currentPeriod.getTransactionsCycle()) {
+			log.error("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
+					+ "Billing period transaction limit of account {} has not been "
+					+ "exhausted. Operation aborted", currentPeriod.getAccountId());
+			throw new BillingPeriodOutdatedException("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
+					+ "Billing period transaction limit of account "
+					+ currentPeriod.getAccountId()
+					+ " has not been exhausted. Operation aborted");
 		}
 	}
 
@@ -105,7 +102,13 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	@Override
 	@SneakyThrows
 	public Long getTotalTransactionsFromBillingPeriod(BillingPeriod period) {
-		return balanceRepository.countTransactionOnCurrentBillingPeriodByAccountId(period.getAccountId(), period.getMovementId());
+		return balanceRepository.countTransactionsFromBillingPeriodByAccountId(period.getAccountId(), period.getMovementId());
+	}
+	
+	@Override
+	@SneakyThrows
+	public Long getTotalTransactionsFromCurrentBillingPeriod(Long accountId) {
+		return balanceRepository.countTransactionsFromCurrentBillingPeriodByAccountId(accountId);
 	}
 	
 	@Override
@@ -116,76 +119,49 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 				accountId);
 
 		Long currentMovementId = null;
-		Boolean tryAgain = false;
-		int count = 0;
 
-		do {
-			if(count > 0) {
-				log.info("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
-						+ "Possible excessive of concurrent operations on account {}. Operation will be proccesed once more.",
-						accountId);
+		BillingPeriod lastBillingPeriod = getLastBillingPeriodFromAccountIfNotFoundCreateInitial(accountId);
+
+		Instant lastMovementTimestampOfPeriod = lastBillingPeriod.getTimestamp();
+		Long lastMovementIdOfPeriod = lastBillingPeriod.getMovementId();
+		Double lastPeriodBalance = lastBillingPeriod.getBalance();
+		/*
+		 * get transactions count and sum of current billing period.
+		 */
+		BillingPeriodTransactionData transactionData = getBillingPeriodTransactionsData(
+				accountId,
+				lastMovementIdOfPeriod, 
+				lastMovementTimestampOfPeriod);
+
+		/*
+		 * This would be the latest updated balance calculated during this process but
+		 * still not saved in a billing period on DB.
+		 */
+		Double cacheBalance = lastPeriodBalance + transactionData.getBalance();
+
+		try {
+			if (transactionData.getCount() >= lastBillingPeriod.getTransactionsCycle()) {
+				log.debug(
+						"[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
+								+ "Transaction count exceeded cycle limit of {} for account {}. "
+								+ "New billing period will be processed for account {}",
+						lastBillingPeriod.getTransactionsCycle(), accountId, accountId);
+				lastBillingPeriod = processNewBillingCycle(lastMovementOfPeriod, lastBillingPeriod, cacheBalance);
+
 			}
-			BillingPeriod lastBillingPeriod = getLastBillingPeriodFromAccountIfNotFoundCreateInitial(accountId);
+		} catch (BillingPeriodOutdatedException e) {
+			log.info(e.getMessage());
+		} catch (RuntimeException e) {
+			log.error("Account {} balance is being modified by more than two users at the same time", lastMovementOfPeriod.getAccountId());
+			e.printStackTrace();
+			throw new ConcurrentModificationException("Account " + lastMovementOfPeriod.getAccountId() + " balance is "
+					+ "being modified by more than two users at the same time");
 			
-			Instant lastMovementTimestampOfPeriod = lastBillingPeriod.getTimestamp();
-			Long lastMovementIdOfPeriod = lastBillingPeriod.getMovementId();
-			Double lastPeriodBalance = lastBillingPeriod.getBalance();
-			/*
-			 * get transactions count and sum
-			 * of current billing period.
-			 */
-			BillingPeriodTransactionData transactionData = getBillingPeriodTransactionsData(
-							accountId,
-							lastMovementIdOfPeriod, 
-							lastMovementTimestampOfPeriod);
-			
-			/*
-			 * This would be the latest
-			 * updated balance calculated
-			 * during this process but
-			 * still not saved in a billing
-			 * period on DB.
-			 */
-			Double cacheBalance = lastPeriodBalance + transactionData.getBalance();
-		
-			try {
-				if (transactionData.getCount() >= lastBillingPeriod.getTransactionsCycle()) {
-					log.debug(
-							"[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
-									+ "Transaction count exceeded cycle limit of {} for account {}. "
-									+ "New billing period will be processed for account {}",
-							lastBillingPeriod.getTransactionsCycle(), accountId, accountId);
-					lastBillingPeriod = processNewBillingCycle(
-							lastMovementOfPeriod,
-							lastBillingPeriod, 
-							cacheBalance);
+		}
 
-				}
-				
-				lastBillingPeriod.setCacheBalance(cacheBalance);
-				
-//				return lastPeriodBalance + transactionData.getBalance();
-				return lastBillingPeriod;
-			} catch (BillingPeriodOutdatedException e) {
-				log.info("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
-						+ "Possible collision of account {} billing period. Operation will be proccesed one more time.",
-						accountId);
-				e.printStackTrace();
-				tryAgain = true;
-				count++;
-			} catch (RuntimeException e) {
-				log.info("[BillingPeriodServiceImpl:getCurrenBillingPeriodBalanceFromAccount] "
-						+ "Possible collision of account {} billing period. Operation will be proccesed one more time.",
-						accountId);
-				e.printStackTrace();
-				tryAgain = true;
-				count++;
-			} 
-		} while (tryAgain && count < 3);
-		
-		log.error("Account {} balance is being modified by more than two users at the same time", lastMovementOfPeriod.getAccountId());
-		throw new ConcurrentModificationException("Account " + lastMovementOfPeriod.getAccountId() + " balance is "
-				+ "being modified by more than two users at the same time");
+		lastBillingPeriod.setCacheBalance(cacheBalance);
+
+		return lastBillingPeriod;		
 	}
 
 	@Override

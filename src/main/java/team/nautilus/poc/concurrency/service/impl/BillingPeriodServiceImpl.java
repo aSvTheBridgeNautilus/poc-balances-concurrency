@@ -140,7 +140,10 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	public BillingPeriodTransactionData getBillingPeriodTransactionsData(Long accountId, Long lastMovementIdOfPeriod,
 			Instant lastMovementTimestampOfPeriod) {
 		return transactionDataMapper.toDTO(balanceRepository.getBillingPeriodBalanceTransactionsCountByAccountId(
-				accountId, lastMovementIdOfPeriod, lastMovementTimestampOfPeriod));
+				accountId, 
+				lastMovementIdOfPeriod
+//				lastMovementTimestampOfPeriod
+				));
 	}
   
 	@Override

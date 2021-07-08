@@ -72,10 +72,10 @@ public class BalanceController {
 			List<Object[]> sumAndCount = (List<Object[]>) 
 					repository.getBillingPeriodBalanceByAccountId(
 					accountId, 
-					index == 0 
-					? fromMIN 
-					: periods.get(index - 1).getTimestamp(), 
-					period.getTimestamp(),
+//					index == 0 
+//					? fromMIN 
+//					: periods.get(index - 1).getTimestamp(), 
+//					period.getTimestamp(),
 					index == 0 
 					? -1
 					: periods.get(index - 1).getMovementId(),
@@ -83,7 +83,10 @@ public class BalanceController {
 			
 					Double sum = null;
 					Long count = null;
-					Double realBalance = repository.getBalanceUntilBillingPeriod(accountId, period.getTimestamp(), period.getMovementId());
+					Double realBalance = repository.getBalanceUntilBillingPeriod(
+							accountId, 
+//							period.getTimestamp(), 
+							period.getMovementId());
 					Double diff = null;
 					
 			try {
@@ -100,9 +103,9 @@ public class BalanceController {
 					BillingPeriodPOCResponse
 					.builder()
 					.accountId(accountId)
-					.fromTimestamp(index == 0 ? null : periods.get(index - 1).getTimestamp())
-					.fromId(accountId)
-					.toTimestamp(period.getTimestamp())
+//					.fromTimestamp(index == 0 ? null : periods.get(index - 1).getTimestamp())
+					.fromId(index == 0 ? -1l : periods.get(index - 1).getMovementId())
+//					.toTimestamp(period.getTimestamp())
 					.toId(period.getMovementId())
 					.periodBalance(period.getBalance())
 					.realBalance(realBalance)

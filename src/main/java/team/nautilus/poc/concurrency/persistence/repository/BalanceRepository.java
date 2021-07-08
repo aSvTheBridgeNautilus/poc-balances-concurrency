@@ -37,18 +37,26 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
+//			+ "and b.timestamp > :from "
 			+ "and b.id > :movementId "
-			+ "and b.timestamp > :from ")
-	Double getCurrentBillingPeriodBalanceByAccountId(@Param("accountId") Long accountId, @Param("movementId") Long movementId, @Param("from") Instant billingPeriodDate);
+			)
+	Double getCurrentBillingPeriodBalanceByAccountId(
+			@Param("accountId") Long accountId, 
+			@Param("movementId") Long movementId
+//			@Param("from") Instant billingPeriodDate
+			);
 
 	@Query(value = "select sum(b.amount) "
 			+ "from "
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "and b.timestamp <= :timestamp "
+//			+ "and b.timestamp <= :timestamp "
 			+ "and b.id <= :movementId ")
-	Double getBalanceUntilBillingPeriod(@Param("accountId") Long accountId, @Param("timestamp") Instant timestamp, @Param("movementId") Long movementId);
+	Double getBalanceUntilBillingPeriod(
+			@Param("accountId") Long accountId, 
+//			@Param("timestamp") Instant timestamp, 
+			@Param("movementId") Long movementId);
 
 	@Query(value = "select "
 			+ "sum(b.amount), "
@@ -57,15 +65,15 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "and b.timestamp > :fromTimestamp "
+//			+ "and b.timestamp > :fromTimestamp "
 			+ "and b.id > :fromId "
-			+ "and b.timestamp <= :toTimestamp "
+//			+ "and b.timestamp <= :toTimestamp "
 			+ "and b.id <= :toId "
 			+ "")
 	List<Object[]> getBillingPeriodBalanceByAccountId(
 			@Param("accountId") Long accountId,
-			@Param("fromTimestamp") Instant fromTimestamp, 
-			@Param("toTimestamp") Instant toTimestamp,
+//			@Param("fromTimestamp") Instant fromTimestamp, 
+//			@Param("toTimestamp") Instant toTimestamp,
 			@Param("fromId") Long fromId, 
 			@Param("toId") Long toId);
 
@@ -76,10 +84,14 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "Balance b "
 			+ "where "
 			+ "b.accountId = :accountId "
-			+ "and b.timestamp > :from "
+//			+ "and b.timestamp > :from "
 			+ "and b.id > :movementId "
 			+ "")
-	List<Object[]> getBillingPeriodBalanceTransactionsCountByAccountId(@Param("accountId") Long accountId, @Param("movementId") Long movementId, @Param("from") Instant from);
+	List<Object[]> getBillingPeriodBalanceTransactionsCountByAccountId(
+			@Param("accountId") Long accountId, 
+			@Param("movementId") Long movementId
+//			@Param("from") Instant from
+			);
 
 	@Query(value = "select b "
 			+ "from "
@@ -94,14 +106,16 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 			+ "where "
 			+ "b.accountId = :accountId "
 			+ "and b.operationType = 2 "
-			+ "order by b.timestamp asc ")
+//			+ "order by b.timestamp asc ")
+			+ "order by b.id asc ")
 	List<Balance> getInitialBalanceFromAccount(@Param("accountId") Long accountId, Pageable pageable);
 
 	@Query(value = "select "
 			+ "distinct b "
 			+ "from "
 			+ "Balance b "
-			+ "order by b.timestamp desc ")
+//			+ "order by b.timestamp desc ")
+			+ "order by b.id desc ")
 	List<Balance> getLastMovementFromAllAccounts();
 
 }

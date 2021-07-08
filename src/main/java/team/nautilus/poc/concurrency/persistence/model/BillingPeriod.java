@@ -44,11 +44,11 @@ public class BillingPeriod implements Serializable {
 	@Column(name = "user_id", nullable = false, unique = false)
 	private String userId;
 	
-	@Id
+//	@Id
 	@JsonProperty("timestamp_utc")
-	@Column(name = "timestamp_utc", columnDefinition = "timestamp")
-	@Convert(converter = Instant2TimestampConverter.class)
-	private Instant timestamp;
+//	@Column(name = "timestamp_utc", columnDefinition = "timestamp")
+//	@Convert(converter = LocalDate2DateConverter.class)
+	private transient Instant timestamp;
 
 	@Id
 	@JsonProperty("movement_id")

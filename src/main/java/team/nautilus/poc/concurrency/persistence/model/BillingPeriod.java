@@ -80,4 +80,6 @@ public class BillingPeriod implements Serializable {
 
 	transient private Double cacheBalance;
 
+	transient private Long transactionCount;
+
 }

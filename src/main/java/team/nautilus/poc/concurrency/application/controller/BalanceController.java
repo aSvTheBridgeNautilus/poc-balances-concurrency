@@ -115,6 +115,7 @@ public class BalanceController {
 		
 		return ResponseEntity.ok(BillingPeriodReportResponse
 										.builder()
+										.total(periodsReport.size())
 										.periods(periodsReport)
 										.build());
 	}

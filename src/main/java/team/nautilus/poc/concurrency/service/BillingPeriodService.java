@@ -1,6 +1,5 @@
 package team.nautilus.poc.concurrency.service;
 
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 import team.nautilus.poc.concurrency.application.dto.BillingPeriodTransactionData;
@@ -16,10 +15,9 @@ public interface BillingPeriodService {
 
 //	Double getCurrenBillingPeriodBalanceFromAccount(Balance lastMovementOfPeriod);
 
-	CompletableFuture<BillingPeriod> processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastBillingPeriod, Double currentBalance);
+	void processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastBillingPeriod);
 
-	BillingPeriodTransactionData getBillingPeriodTransactionsData(Long accountId, Long lastMovementIdOfPeriod,
-			Instant lastMovementTimestampOfPeriod);
+	BillingPeriodTransactionData getBillingPeriodTransactionsData(Long accountId, Long lastMovementIdOfPeriod);
 
 	BillingPeriod getLastBillingPeriodFromAccountIfNotFoundCreateInitial(Long accountId);
 

@@ -82,7 +82,9 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 			log.info("[AccountJournalFacade:takeFundsFromAccount] save new movement of Account {}",
 					lastMovement.getAccountId());
 			
-			Balance balance = balanceRepository.save(debitMovement);
+			Balance balance = balanceRepository.saveAndFlush(debitMovement);
+			
+			billingService.processNewBillingCycle(debitMovement, lastPeriod);
 		
 			log.info("[AccountJournalFacade:takeFundsFromAccount] {}", balance);
 			
@@ -129,8 +131,10 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 			log.info("[AccountJournalFacade:addFundsToAccount] save new movement of Account {}",
 					lastMovement.getAccountId());
 			
-			Balance balance = balanceRepository.save(creditMovement);
+			Balance balance = balanceRepository.saveAndFlush(creditMovement);
 
+			billingService.processNewBillingCycle(creditMovement, lastPeriod);
+			
 			log.info("[AccountJournalFacade:addFundsToAccount]: {}", balance);
 			
 			return BalanceBuilder.toResponse(balance);
@@ -198,7 +202,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 		log.debug("[AccountJournalFacade:registerTransfer] started");
 		Balance sourceAccount = journalService.getLastMovementFromAccount(request.getSourceAccountId());
 		
-		BillingPeriod sourcePeriodBalance = verifyAccountHasSufficientFunds(sourceAccount, request.getAmount());
+		BillingPeriod sourcePeriod = verifyAccountHasSufficientFunds(sourceAccount, request.getAmount());
 		
 		Balance targetAccount = journalService.getLastMovementFromAccount(request.getTargetAccountId());
 
@@ -206,18 +210,24 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 
 		Balance sourceMov = BalanceBuilder.toNewMovement(
 				sourceAccount, 
-				sourcePeriodBalance.getCacheBalance(), 
+				sourcePeriod.getCacheBalance(), 
 				journalService.generateNewMovementIdForAccount(sourceAccount.getAccountId()), 
 				request, 
 				timestamp, OperationType.DEBIT);
+		
+		BillingPeriod targetPeriod = billingService.getCurrentBillingPeriodFromAccount(targetAccount);
 		Balance targetMov = BalanceBuilder.toNewMovement(
 				targetAccount, 
-				billingService.getCurrentBillingPeriodFromAccount(targetAccount).getCacheBalance(),
+				targetPeriod.getCacheBalance(),
 				journalService.generateNewMovementIdForAccount(targetAccount.getAccountId()), 
 				request, 
 				timestamp, OperationType.CREDIT);
 
 		boolean result = journalService.persistMovementsInSingleTransaction(sourceMov, targetMov);
+		
+		billingService.processNewBillingCycle(sourceMov, sourcePeriod);
+		billingService.processNewBillingCycle(targetMov, targetPeriod);
+
 		return TransferResponse
 				   .builder()
 				   .result(Boolean.TRUE.equals(result) ? "OK" : "Transfer failed")

@@ -15,6 +15,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class BillingPeriodReportResponse {
 	
+	private Integer total;
+	
 	private List<BillingPeriodPOCResponse> periods;
 
 }

@@ -21,14 +21,17 @@ public class BillingPeriodTransactionDataMapperImpl implements BillingPeriodTran
 
 	@Override
 	public BillingPeriodTransactionData toDTO(List<Object[]> entity) {
-		if (entity.get(0)[0] == null) {
+		if (entity.get(0)[1] == null) {
 			return null;
 		}
 		
+		Long count = ((Number) entity.get(0)[1]).longValue();
+		Double sum = count > 0 ? ((Number) entity.get(0)[0]).doubleValue() : 0;
+		
 		return BillingPeriodTransactionData
 				.builder()
-				.balance(((Number) entity.get(0)[0]).doubleValue())
-				.count(((Number) entity.get(0)[1]).longValue())
+				.count(count)
+				.balance(sum)
 				.build();
 	}
 

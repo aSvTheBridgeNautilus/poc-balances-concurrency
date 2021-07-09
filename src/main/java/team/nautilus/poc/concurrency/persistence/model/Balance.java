@@ -15,6 +15,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -36,7 +37,9 @@ import team.nautilus.poc.concurrency.persistence.model.embeddables.BalanceMoveme
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "poc_balance")
+@Table(name = "poc_balance", indexes = {
+		@Index(name = "billing_period_search_idx", columnList = "id, account_id"),
+})
 public class Balance implements Serializable {
 
 	/**

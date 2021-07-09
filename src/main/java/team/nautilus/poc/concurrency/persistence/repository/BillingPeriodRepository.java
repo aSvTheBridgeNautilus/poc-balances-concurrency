@@ -13,29 +13,33 @@ import team.nautilus.poc.concurrency.persistence.model.BillingPeriod;
 @Repository
 public interface BillingPeriodRepository extends JpaRepository<BillingPeriod, Long> {
 	
-	@Query(value = "select max(b.movementId) "
+//	@Query(value = "select max(b.movement_id) "
+//			+ "from "
+//			+ "BillingPeriod b "
+//			+ "where "
+//			+ "b.account_id = :accountId ", nativeQuery = true)
+	@Query(value = "select max(b.id.movementId) "
 			+ "from "
 			+ "BillingPeriod b "
 			+ "where "
-			+ "b.accountId = :accountId ")
+			+ "b.id.accountId = :accountId "
+			+ "order by b.id.movementId desc")
 	Long getLatestMovementIdFromAccountBillingPeriodsByAccountId(@Param("accountId") Long accountId);
 	
 	@Query(value = "select b "
 			+ "from "
 			+ "BillingPeriod b "
 			+ "where "
-			+ "b.accountId = :accountId "
-//			+ "order by b.timestamp desc, b.id ")
-			+ "order by b.id desc ")
+			+ "b.id.accountId = :accountId "
+			+ "order by b.id.movementId desc ")
 	List<BillingPeriod> getCurrentBillingPeriodByAccountId(@Param("accountId") Long accountId, Pageable pageable);
 
 	@Query(value = "select b "
 			+ "from "
 			+ "BillingPeriod b "
 			+ "where "
-			+ "b.accountId = :accountId "
-//			+ "order by b.timestamp asc, b.id ")
-			+ "order by b.movementId asc ")
+			+ "b.id.accountId = :accountId "
+			+ "order by b.id.movementId asc ")
 	List<BillingPeriod> getAllBillingPeriodsByAccountId(@Param("accountId") Long accountId);
 	
 }

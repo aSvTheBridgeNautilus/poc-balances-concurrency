@@ -5,6 +5,7 @@ import java.time.Instant;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
@@ -19,6 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import team.nautilus.poc.concurrency.persistence.model.converter.Instant2TimestampConverter;
+import team.nautilus.poc.concurrency.persistence.model.embeddable.BillingPeriodId;
 
 @Getter
 @Setter
@@ -30,7 +32,6 @@ import team.nautilus.poc.concurrency.persistence.model.converter.Instant2Timesta
 		@Index(name = "account_idx", columnList = "account_id"),
 		@Index(name = "account_movement_idx", columnList = "account_id, movement_id"),
 })
-@IdClass(BillingPeriod.class)
 public class BillingPeriod implements Serializable {
 
 	/**
@@ -38,27 +39,25 @@ public class BillingPeriod implements Serializable {
 	 */
 	private static final long serialVersionUID = 7255842483255740629L;
 	
-	@Id
-	@JsonProperty(value = "account_id")
-	@Column(name = "account_id", nullable = false, unique = false)
-	private Long accountId;
+	@EmbeddedId
+	private BillingPeriodId id;
 	
-	@Id
-	@JsonProperty(value = "user_id")
-	@Column(name = "user_id", nullable = false, unique = false)
-	private String userId;
+//	@JsonProperty(value = "account_id")
+//	@Column(name = "account_id", insertable = false, updatable = false)
+//	private Long accountId;
 	
-//	@Id
+//	@JsonProperty(value = "user_id")
+//	@Column(name = "user_id", insertable = false, updatable = false)
+//	private String userId;
+	
 	@JsonProperty("timestamp_utc")
 //	@Column(name = "timestamp_utc", columnDefinition = "timestamp")
 //	@Convert(converter = LocalDate2DateConverter.class)
 	private transient Instant timestamp;
 
-	@Id
-	@JsonProperty("movement_id")
-	@Column(name = "movement_id")
-	@Convert(converter = Instant2TimestampConverter.class)
-	private Long movementId;
+//	@JsonProperty("movement_id")
+//	@Column(name = "movement_id", insertable = false, updatable = false)
+//	private Long movementId;
 
 //	@JsonProperty(value = "billing_day")
 //	@Column(name = "billing_day", columnDefinition = "decimal(2, 0)", nullable = false)

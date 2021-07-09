@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Embeddable;
+import javax.persistence.IdClass;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -24,6 +25,7 @@ import team.nautilus.poc.concurrency.persistence.model.converter.LocalDate2DateC
 @AllArgsConstructor
 @NoArgsConstructor
 @Embeddable
+@IdClass(BillingPeriodId.class)
 public class BillingPeriodId implements Serializable {
 
 	/**
@@ -39,9 +41,13 @@ public class BillingPeriodId implements Serializable {
 	@Column(name = "user_id", nullable = false, unique = false)
 	private String userId;
 
-	@JsonProperty(value = "billing_date")
-	@Convert(converter = LocalDate2DateConverter.class)
-	@Column(name = "billing_date", columnDefinition = "date", nullable = false, unique = false)
-	private LocalDate billingDate;
+//	@JsonProperty(value = "billing_date")
+//	@Convert(converter = LocalDate2DateConverter.class)
+//	@Column(name = "billing_date", columnDefinition = "date", nullable = false, unique = false)
+//	private LocalDate billingDate;
+
+	@JsonProperty(value = "movement_id")
+	@Column(name = "movement_id", nullable = false, unique = false)
+	private Long movementId;
 
 }

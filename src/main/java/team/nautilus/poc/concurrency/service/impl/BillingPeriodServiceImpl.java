@@ -35,7 +35,8 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	@Transactional(rollbackFor = RuntimeException.class)
 	public synchronized BillingPeriod processNewBillingCycle(Balance processedMovement, BillingPeriod lastPeriod) {
 		log.info("[BillingPeriodServiceImpl:processNewBillingCycle] "
-				+ "Started for account {}, after transaction {} was processed", 
+				+ "Started for account {}, after transaction {} "
+				+ "was processed", 
 				processedMovement.getAccountId(),
 				processedMovement.getId()
 				);
@@ -44,7 +45,9 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 		try {
 			
 			if(lastPeriod.getTransactionCount() < lastPeriod.getTransactionsCycle()) {
-				log.info("[BillingPeriodServiceImpl:processNewBillingCycle] Transaction limit for period {} of account {} hasn't been reached",
+				log.info("[BillingPeriodServiceImpl:processNewBillingCycle] "
+						+ "Transaction limit for period {} of account {} "
+						+ "hasn't been reached",
 						lastPeriod.getId().getMovementId(),
 						accountId);
 				return null;
@@ -59,32 +62,38 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 						.movementId(processedMovement.getId())
 						.build())
 					.transactionsCycle(lastPeriod.getTransactionsCycle())
-//					.balance(lastPeriod.getCacheBalance() + processedMovement.getAmount())
-//					.balance(getBalanceFromBillingPeriod(
-//							accountId, 
-//							lastPeriod.getId().getMovementId(), 
-//							lastPeriod.getId().getMovementId()))
+					// balance will be set onward
 					.build();
+			
 			/*
-			 * Before create a new billing cycle, let's make sure the transaction cycle on
-			 * the current period has been exhausted.
+			 * Before create a new billing cycle, 
+			 * let's make sure the transaction cycle 
+			 * on the current period has been 
+			 * exhausted.
 			 */
-			if (getTotalTransactionsFromCurrentBillingPeriod(accountId) < newPeriod.getTransactionsCycle()) {
-				log.info("[BillingPeriodServiceImpl:processNewBillingCycle] Other transaction updated billing period of account {}. Operation aborted",
-						accountId);
+			Long totalTransactions = null;
+			if ((totalTransactions = getTotalTransactionsFromCurrentBillingPeriod(accountId)) < newPeriod.getTransactionsCycle()) {
+				log.info("[BillingPeriodServiceImpl:processNewBillingCycle] "
+						+ "Current billing period of account {} hasn't "
+						+ "exhausted transactions limit of {}, current "
+						+ "transactions: {}. Operation aborted",
+						accountId, 
+						newPeriod.getTransactionsCycle(),
+						totalTransactions);
 				return null;
 			}
 			
-			newPeriod.setBalance(lastPeriod.getBalance() + getBalanceFromBillingPeriod(
+			newPeriod.setBalance(
+					lastPeriod.getBalance() 
+					+ getBalanceBetweenMovementsFromAccount(
 							accountId, 
 							lastPeriod.getId().getMovementId(), 
 							newPeriod.getId().getMovementId()));
 
 		    return billingRepository.saveAndFlush(newPeriod);
 		} catch (RuntimeException e) {
-			log.error(
-					"[BillingPeriodServiceImpl:processNewBillingCycle] "
-							+ "Error proccesing new billing cycle for account {}: {}",
+			log.error("[BillingPeriodServiceImpl:processNewBillingCycle] "
+					 + "Error proccesing new billing cycle for account {}: {}",
 					processedMovement.getAccountId(), e.getMessage());
 			e.printStackTrace();
 		}
@@ -119,7 +128,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 
 	@Override
 	@SneakyThrows
-	public Double getBalanceFromBillingPeriod(Long accountId, Long fromMovementId, Long toMovementId) {
+	public Double getBalanceBetweenMovementsFromAccount(Long accountId, Long fromMovementId, Long toMovementId) {
 		return balanceRepository.sumTransactionsAmountBetweenIdsByAccountId(accountId, fromMovementId, toMovementId);
 	}
 	
@@ -145,7 +154,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 
 		BillingPeriod lastBillingPeriod = getLastBillingPeriodFromAccountIfNotFoundCreateInitial(accountId);
 
-		BillingPeriodTransactionData transactionData = getBillingPeriodTransactionsData(
+		BillingPeriodTransactionData transactionData = getTransactionsDataFromBillingPeriodOnward(
 				accountId,
 				lastBillingPeriod.getId().getMovementId());
 
@@ -156,10 +165,18 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	}
 
 	@Override
-	public BillingPeriodTransactionData getBillingPeriodTransactionsData(Long accountId, Long lastMovementIdOfPeriod) {
+	public BillingPeriodTransactionData getTransactionsDataFromBillingPeriodOnward(Long accountId, Long lastMovementIdOfPeriod) {
 		return transactionDataMapper.toDTO(balanceRepository.sumAmountCountTransactionFromBillingPeriodByAccountId(
 				accountId, 
 				lastMovementIdOfPeriod));
+	}
+	
+	@Override
+	public BillingPeriodTransactionData getTransactionsDataBetweenMovements(Long accountId, Long fromId, Long toId) {
+		return transactionDataMapper.toDTO(balanceRepository.sumAmountCountTransactionsBetweenMovementsByAccountId(
+				accountId, 
+				fromId, 
+				toId));
 	}
   
 	@Override

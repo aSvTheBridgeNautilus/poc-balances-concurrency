@@ -16,7 +16,7 @@ public interface BillingPeriodService {
 
 //	Double getCurrenBillingPeriodBalanceFromAccount(Balance lastMovementOfPeriod);
 
-	CompletableFuture<BillingPeriod> processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastBillingPeriod, Double currentBalance);
+	BillingPeriod processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastBillingPeriod, Double currentBalance);
 
 	BillingPeriodTransactionData getBillingPeriodTransactionsData(Long accountId, Long lastMovementIdOfPeriod,
 			Instant lastMovementTimestampOfPeriod);

@@ -28,6 +28,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class BillingPeriodPOCResponse {
 
+	@JsonProperty(value = "index")
+	private Integer index;
+
 	@JsonProperty(value = "account_id")
 	private Long accountId;
 

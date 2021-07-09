@@ -97,6 +97,7 @@ public class BalanceController {
 			BillingPeriodPOCResponse response =
 					BillingPeriodPOCResponse
 					.builder()
+					.index(index)
 					.accountId(accountId)
 //					.fromTimestamp(index == 0 ? null : periods.get(index - 1).getTimestamp())
 					.fromId(index == 0 ? -1l : periods.get(index - 1).getId().getMovementId())

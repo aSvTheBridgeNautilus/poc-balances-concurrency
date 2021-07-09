@@ -15,7 +15,7 @@ public interface BillingPeriodService {
 
 //	Double getCurrenBillingPeriodBalanceFromAccount(Balance lastMovementOfPeriod);
 
-	void processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastBillingPeriod);
+	BillingPeriod processNewBillingCycle(Balance lastMovementOfPeriod, BillingPeriod lastBillingPeriod);
 
 	BillingPeriodTransactionData getBillingPeriodTransactionsData(Long accountId, Long lastMovementIdOfPeriod);
 
@@ -30,5 +30,7 @@ public interface BillingPeriodService {
 	Long getTotalTransactionsFromBillingPeriod(BillingPeriod period);
 
 	Long getTotalTransactionsFromCurrentBillingPeriod(Long accountId);
+
+	Double getBalanceFromBillingPeriod(Long accountId, Long fromMovementId, Long toMovementId);
 
 }

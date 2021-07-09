@@ -33,8 +33,13 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	@Override
 	@SneakyThrows
 	@Transactional(rollbackFor = RuntimeException.class)
-	public synchronized void processNewBillingCycle(Balance processedMovement, BillingPeriod lastPeriod) {
-
+	public synchronized BillingPeriod processNewBillingCycle(Balance processedMovement, BillingPeriod lastPeriod) {
+		log.info("[BillingPeriodServiceImpl:processNewBillingCycle] "
+				+ "Started for account {}, after transaction {} was processed", 
+				processedMovement.getAccountId(),
+				processedMovement.getId()
+				);
+				
 		Long accountId = processedMovement.getAccountId();
 		try {
 			
@@ -42,7 +47,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 				log.info("[BillingPeriodServiceImpl:processNewBillingCycle] Transaction limit for period {} of account {} hasn't been reached",
 						lastPeriod.getId().getMovementId(),
 						accountId);
-				return;
+				return null;
 			}
 		
 			
@@ -54,7 +59,11 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 						.movementId(processedMovement.getId())
 						.build())
 					.transactionsCycle(lastPeriod.getTransactionsCycle())
-					.balance(lastPeriod.getCacheBalance() + processedMovement.getAmount())
+//					.balance(lastPeriod.getCacheBalance() + processedMovement.getAmount())
+//					.balance(getBalanceFromBillingPeriod(
+//							accountId, 
+//							lastPeriod.getId().getMovementId(), 
+//							lastPeriod.getId().getMovementId()))
 					.build();
 			/*
 			 * Before create a new billing cycle, let's make sure the transaction cycle on
@@ -63,10 +72,15 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 			if (getTotalTransactionsFromCurrentBillingPeriod(accountId) < newPeriod.getTransactionsCycle()) {
 				log.info("[BillingPeriodServiceImpl:processNewBillingCycle] Other transaction updated billing period of account {}. Operation aborted",
 						accountId);
-				return;
+				return null;
 			}
+			
+			newPeriod.setBalance(lastPeriod.getBalance() + getBalanceFromBillingPeriod(
+							accountId, 
+							lastPeriod.getId().getMovementId(), 
+							newPeriod.getId().getMovementId()));
 
-		    billingRepository.saveAndFlush(newPeriod);
+		    return billingRepository.saveAndFlush(newPeriod);
 		} catch (RuntimeException e) {
 			log.error(
 					"[BillingPeriodServiceImpl:processNewBillingCycle] "
@@ -74,6 +88,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 					processedMovement.getAccountId(), e.getMessage());
 			e.printStackTrace();
 		}
+		return null;
 	}
 	
 	@Override
@@ -101,6 +116,13 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 	public Long getLatestMovementIdFromAccountBillingPeriods(Long accountId) {
 		return billingRepository.getLatestMovementIdFromAccountBillingPeriodsByAccountId(accountId);
 	}
+
+	@Override
+	@SneakyThrows
+	public Double getBalanceFromBillingPeriod(Long accountId, Long fromMovementId, Long toMovementId) {
+		return balanceRepository.sumTransactionsAmountBetweenIdsByAccountId(accountId, fromMovementId, toMovementId);
+	}
+	
 
 	@Override
 	@SneakyThrows

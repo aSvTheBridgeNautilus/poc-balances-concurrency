@@ -2,10 +2,12 @@ package team.nautilus.poc.concurrency.application.facade.impl;
 
 import java.security.InvalidParameterException;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 import javax.validation.Valid;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ import team.nautilus.poc.concurrency.application.dto.request.BalanceTransferRequ
 import team.nautilus.poc.concurrency.application.dto.response.BalanceResponse;
 import team.nautilus.poc.concurrency.application.dto.response.TransferResponse;
 import team.nautilus.poc.concurrency.application.facade.AccountJournalFacade;
+import team.nautilus.poc.concurrency.infrastructure.config.BillingPeriodAsyncConfiguration;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.BalanceInitializationException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.InsufficientFundsException;
 import team.nautilus.poc.concurrency.infrastructure.errors.exceptions.ProcessNewBillingCycleException;
@@ -84,7 +87,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 			
 			Balance balance = balanceRepository.saveAndFlush(debitMovement);
 			
-			billingService.processNewBillingCycle(debitMovement, lastPeriod);
+			processBillingPeriodsAsync(debitMovement, lastPeriod);
 		
 			log.info("[AccountJournalFacade:takeFundsFromAccount] {}", balance);
 			
@@ -133,7 +136,7 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 			
 			Balance balance = balanceRepository.saveAndFlush(creditMovement);
 
-			billingService.processNewBillingCycle(creditMovement, lastPeriod);
+			processBillingPeriodsAsync(creditMovement, lastPeriod);
 			
 			log.info("[AccountJournalFacade:addFundsToAccount]: {}", balance);
 			
@@ -225,13 +228,19 @@ public class AccountJournalFacadeImpl implements AccountJournalFacade {
 
 		boolean result = journalService.persistMovementsInSingleTransaction(sourceMov, targetMov);
 		
-		billingService.processNewBillingCycle(sourceMov, sourcePeriod);
-		billingService.processNewBillingCycle(targetMov, targetPeriod);
+		processBillingPeriodsAsync(sourceMov, sourcePeriod);
+		processBillingPeriodsAsync(targetMov, targetPeriod);
 
 		return TransferResponse
 				   .builder()
 				   .result(Boolean.TRUE.equals(result) ? "OK" : "Transfer failed")
 				   .build();
+	}
+	
+	@Async(BillingPeriodAsyncConfiguration.BILLING_PERIOD_TASK_EXECUTOR)
+	public synchronized void processBillingPeriodsAsync(Balance movement, BillingPeriod period) {
+		CompletableFuture<BillingPeriod> toCompleteAsync = new CompletableFuture<>();
+		toCompleteAsync.completeAsync(() -> billingService.processNewBillingCycle(movement, period));
 	}
 	
 }

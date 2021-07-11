@@ -62,7 +62,7 @@ public class BillingPeriodServiceImpl implements BillingPeriodService {
 						.movementId(processedMovement.getId())
 						.build())
 					.transactionsCycle(lastPeriod.getTransactionsCycle())
-					// balance will be set onward
+					// balance will be set later
 					.build();
 			
 			/*

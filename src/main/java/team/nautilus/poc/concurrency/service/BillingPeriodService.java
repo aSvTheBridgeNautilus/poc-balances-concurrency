@@ -1,7 +1,5 @@
 package team.nautilus.poc.concurrency.service;
 
-import java.util.concurrent.CompletableFuture;
-
 import team.nautilus.poc.concurrency.application.dto.BillingPeriodTransactionData;
 import team.nautilus.poc.concurrency.application.dto.request.BalanceInitializationRequest;
 import team.nautilus.poc.concurrency.persistence.model.Balance;

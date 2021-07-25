@@ -151,7 +151,7 @@
         <stringProp name="filename"></stringProp>
       </ResultCollector>
       <hashTree/>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="User 111 - Billing Period" enabled="true">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="User 111 - Billing Period" enabled="false">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
@@ -298,6 +298,233 @@
           <stringProp name="HTTPSampler.connect_timeout"></stringProp>
           <stringProp name="HTTPSampler.response_timeout"></stringProp>
         </HTTPSamplerProxy>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname=" 6019 - Billing Period Implementation" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">50</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">10</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="TOP Credit - Credit to User 39" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&#xd;
+  &quot;account_id&quot;: 39,&#xd;
+  &quot;user_id&quot;: &quot;auth0|606e0ed9e1b94d0076ad4dc4&quot;,&#xd;
+  &quot;amount&quot;: ${amount_1},&#xd;
+  &quot;currency&quot;: &quot;JMD&quot;,&#xd;
+  &quot;comments&quot;: &quot;top transfer from NCB to user 39&quot;,&#xd;
+  &quot;transfer_reference_id&quot;: ${transfer_reference_id_1},&#xd;
+  &quot;bank_reference_id&quot;: &quot;NCB&quot;&#xd;
+}&#xd;
+</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">8080</stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
+          <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+          <stringProp name="HTTPSampler.path">balance_credit</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="TOP Debit - Debit from user 39" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&#xd;
+  &quot;account_id&quot;: 39,&#xd;
+  &quot;user_id&quot;: &quot;auth0|606e0ed9e1b94d0076ad4dc4&quot;,&#xd;
+  &quot;amount&quot;: ${amount_2},&#xd;
+  &quot;currency&quot;: &quot;JMD&quot;,&#xd;
+  &quot;comments&quot;: &quot;top debit user 39&quot;,&#xd;
+  &quot;transfer_reference_id&quot;: ${transfer_reference_id_2},&#xd;
+  &quot;bank_reference_id&quot;: &quot;NCB&quot;&#xd;
+}&#xd;
+</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">8080</stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
+          <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+          <stringProp name="HTTPSampler.path">balance_debit</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="P2P Transfer - 39 to 34" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&#xd;
+  &quot;amount&quot;: ${amount_3},&#xd;
+  &quot;currency&quot;: &quot;JMD&quot;,&#xd;
+  &quot;comments&quot;: &quot;transfer from user 39 to user 34&quot;,&#xd;
+  &quot;source_account_id&quot;: 39,&#xd;
+  &quot;source_user_id&quot;: &quot;auth0|606e0ed9e1b94d0076ad4dc4&quot;,&#xd;
+  &quot;target_account_id&quot;: 34,&#xd;
+  &quot;target_user_id&quot;: &quot;andres.arias@nautilus.team&quot;,&#xd;
+  &quot;transfer_reference_id&quot;: ${transfer_reference_id_3}&#xd;
+}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">8080</stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
+          <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+          <stringProp name="HTTPSampler.path">balance_transfer</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="P2P Transfer - 34 to 39" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&#xd;
+  &quot;amount&quot;: ${amount_4},&#xd;
+  &quot;currency&quot;: &quot;JMD&quot;,&#xd;
+  &quot;comments&quot;: &quot;transfer from user 34 to user 39&quot;,&#xd;
+  &quot;source_account_id&quot;: 34,&#xd;
+  &quot;source_user_id&quot;: &quot;andres.arias@nautilus.team&quot;,&#xd;
+  &quot;target_account_id&quot;: 39,&#xd;
+  &quot;target_user_id&quot;: &quot;auth0|606e0ed9e1b94d0076ad4dc4&quot;,&#xd;
+  &quot;transfer_reference_id&quot;: ${transfer_reference_id_4}&#xd;
+}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">8080</stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
+          <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+          <stringProp name="HTTPSampler.path">balance_transfer</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Transfer Id 1" enabled="true">
+          <stringProp name="maximumValue">9999</stringProp>
+          <stringProp name="minimumValue">1</stringProp>
+          <stringProp name="outputFormat"></stringProp>
+          <boolProp name="perThread">false</boolProp>
+          <stringProp name="randomSeed">1</stringProp>
+          <stringProp name="variableName">transfer_reference_id_1</stringProp>
+        </RandomVariableConfig>
+        <hashTree/>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Transfer Id 2" enabled="true">
+          <stringProp name="maximumValue">99999</stringProp>
+          <stringProp name="minimumValue">10000</stringProp>
+          <stringProp name="outputFormat"></stringProp>
+          <boolProp name="perThread">false</boolProp>
+          <stringProp name="randomSeed">1</stringProp>
+          <stringProp name="variableName">transfer_reference_id_2</stringProp>
+        </RandomVariableConfig>
+        <hashTree/>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Transfer Id 3" enabled="true">
+          <stringProp name="maximumValue">999999</stringProp>
+          <stringProp name="minimumValue">100000</stringProp>
+          <stringProp name="outputFormat"></stringProp>
+          <boolProp name="perThread">false</boolProp>
+          <stringProp name="randomSeed">1</stringProp>
+          <stringProp name="variableName">transfer_reference_id_3</stringProp>
+        </RandomVariableConfig>
+        <hashTree/>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Transfer Id 4" enabled="true">
+          <stringProp name="maximumValue">9999999</stringProp>
+          <stringProp name="minimumValue">1000000</stringProp>
+          <stringProp name="outputFormat"></stringProp>
+          <boolProp name="perThread">false</boolProp>
+          <stringProp name="randomSeed">1</stringProp>
+          <stringProp name="variableName">transfer_reference_id_4</stringProp>
+        </RandomVariableConfig>
+        <hashTree/>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Amount 1" enabled="true">
+          <stringProp name="variableName">amount_1</stringProp>
+          <stringProp name="outputFormat"></stringProp>
+          <stringProp name="minimumValue">1</stringProp>
+          <stringProp name="maximumValue">500</stringProp>
+          <stringProp name="randomSeed">33</stringProp>
+          <boolProp name="perThread">true</boolProp>
+        </RandomVariableConfig>
+        <hashTree/>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Amount 2" enabled="true">
+          <stringProp name="variableName">amount_2</stringProp>
+          <stringProp name="outputFormat"></stringProp>
+          <stringProp name="minimumValue">1</stringProp>
+          <stringProp name="maximumValue">50</stringProp>
+          <stringProp name="randomSeed">22</stringProp>
+          <boolProp name="perThread">true</boolProp>
+        </RandomVariableConfig>
+        <hashTree/>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Amount 3" enabled="true">
+          <stringProp name="variableName">amount_3</stringProp>
+          <stringProp name="outputFormat"></stringProp>
+          <stringProp name="minimumValue">1</stringProp>
+          <stringProp name="maximumValue">500</stringProp>
+          <stringProp name="randomSeed">66</stringProp>
+          <boolProp name="perThread">true</boolProp>
+        </RandomVariableConfig>
+        <hashTree/>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Amount 4" enabled="true">
+          <stringProp name="variableName">amount_4</stringProp>
+          <stringProp name="outputFormat"></stringProp>
+          <stringProp name="minimumValue">1</stringProp>
+          <stringProp name="maximumValue">50</stringProp>
+          <stringProp name="randomSeed">55</stringProp>
+          <boolProp name="perThread">true</boolProp>
+        </RandomVariableConfig>
         <hashTree/>
       </hashTree>
     </hashTree>
